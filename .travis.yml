@@ -13,4 +13,10 @@ jobs:
     - stage: deploy
       if: branch = master
       script:
-        - echo "Deploying version 0.0.${TRAVIS_BUILD_NUMBER}"
+        - export VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.((${TRAVIS_BUILD_NUMBER} - ${BUILD_NUMBER_SHIFT}))"
+        - echo "Deploying version ${VERSION}"
+
+env:
+  - MAJOR_VERSION=0
+  - MINOR_VERSION=0
+  - BUILD_NUMBER_SHIFT=5
