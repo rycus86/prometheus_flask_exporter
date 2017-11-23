@@ -6,6 +6,8 @@ python:
   - '3.6'
 
 install: skip
+script:
+  - echo 'Default script step'
 
 jobs:
   include:
