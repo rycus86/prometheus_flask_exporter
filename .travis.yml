@@ -5,11 +5,11 @@ python:
   - '3.5'
   - '3.6'
 
+install: skip
+script: pip install .
+
 jobs:
   include:
-    - script: pip install .
-      install: skip
-
     - stage: deploy
       if: branch = master
       script:
