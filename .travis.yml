@@ -1,0 +1,19 @@
+language: python
+python:
+  - '2.7'
+  - '3.4'
+  - '3.5'
+  - '3.6'
+
+install: skip
+
+jobs:
+  include:
+    - stage: test
+      script:
+        - pip install .
+
+    - stage: deploy
+      if: branch = master
+      script:
+        - echo "Deploying version 0.0.${TRAVIS_BUILD_NUMBER}"
