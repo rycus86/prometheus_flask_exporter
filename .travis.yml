@@ -28,6 +28,7 @@ script:
 jobs:
   include:
   - stage: deploy
+    script: skip
     before_deploy:
       - apt-get -qq update
       - apt-get install -y pandoc

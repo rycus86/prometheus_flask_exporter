@@ -1,5 +1,7 @@
 from unittest_helper import BaseTestCase
 
+from flask import make_response
+
 
 class DefaultsTest(BaseTestCase):
     def test_simple(self):
@@ -53,6 +55,25 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertMetric(
             'flask_http_request_duration_seconds_count', '3.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
+    def test_response_object(self):
+        self.metrics()
+
+        @self.app.route('/test')
+        def test():
+            return make_response('OK', 200)
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '2.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
