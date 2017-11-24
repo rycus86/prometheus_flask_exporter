@@ -28,7 +28,7 @@ class BaseTestCase(unittest.TestCase):
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertIn(text, response.data)
+        self.assertIn(text.encode('utf-8'), response.data)
 
     def assertAbsent(self, name, *labels, **kwargs):
         if labels:
@@ -43,5 +43,5 @@ class BaseTestCase(unittest.TestCase):
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn(text, response.data)
+        self.assertNotIn(text.encode('utf-8'), response.data)
 
