@@ -2,7 +2,7 @@ import inspect
 import functools
 from timeit import default_timer
 
-from flask import request
+from flask import request, Response, make_response
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
@@ -32,7 +32,7 @@ class PrometheusMetrics(object):
 
         @app.route('/<item_type>')
         @metrics.do_not_track()
-        @counter('invocation_by_type', 'Number of invocations by type',
+        @metrics.counter('invocation_by_type', 'Number of invocations by type',
                  labels={'item_type': lambda: request.view_args['type']})
         def by_type(item_type):
             pass  # only the counter is collected, not the default metrics
@@ -186,8 +186,8 @@ class PrometheusMetrics(object):
             Gauge,
             lambda metric, time: metric.dec(),
             kwargs, name, description, labels,
-            before=lambda metric: metric.inc(),
-            registry=self.registry
+            registry=self.registry,
+            before=lambda metric: metric.inc()
         )
 
     def counter(self, name, description, labels=None, **kwargs):
@@ -208,7 +208,8 @@ class PrometheusMetrics(object):
         )
 
     @staticmethod
-    def _track(metric_type, metric_call, metric_kwargs, name, description, labels, before=None):
+    def _track(metric_type, metric_call, metric_kwargs, name, description, labels,
+               registry, before=None):
         """
         Internal method decorator logic.
 
@@ -220,6 +221,7 @@ class PrometheusMetrics(object):
         :param labels: a dictionary of `{labelname: callable}` for labels
         :param before: an optional callable to invoke before executing the
             request handler method accepting the single `metric` argument
+        :param registry: the Prometheus Registry to use
         """
 
         if labels is not None and not isinstance(labels, dict):
@@ -240,7 +242,10 @@ class PrometheusMetrics(object):
                 return parent_metric
 
         label_names = labels.keys() if labels else tuple()
-        parent_metric = metric_type(name, description, labelnames=label_names, **metric_kwargs)
+        parent_metric = metric_type(
+            name, description, labelnames=label_names, registry=registry,
+            **metric_kwargs
+        )
 
         label_generator = tuple(
             (key, wrap_call(call))
@@ -262,7 +267,12 @@ class PrometheusMetrics(object):
                 total_time = max(default_timer() - start_time, 0)
 
                 if not metric:
-                    metric = get_metric(response)
+                    response_for_metric = response
+
+                    if not isinstance(response, Response):
+                        response_for_metric = make_response(response)
+
+                    metric = get_metric(response_for_metric)
 
                 metric_call(metric, time=total_time)
                 return response

@@ -116,6 +116,28 @@ class DefaultsTest(BaseTestCase):
             endpoint='/metrics'
         )
 
+    def test_non_automatic_endpoint_registration(self):
+        metrics = self.metrics(path=None)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+
+        no_metrics_response = self.client.get('/metrics')
+        self.assertEqual(no_metrics_response.status_code, 404)
+
+        metrics.register_endpoint('/manual/metrics')
+
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200),
+            endpoint='/manual/metrics'
+        )
+
     def test_custom_buckets(self):
         self.metrics(buckets=(0.2, 2, 4))
 

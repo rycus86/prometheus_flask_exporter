@@ -1,3 +1,4 @@
+import re
 import unittest
 
 from flask import Flask
@@ -17,18 +18,28 @@ class BaseTestCase(unittest.TestCase):
 
     def assertMetric(self, name, value, *labels, **kwargs):
         if labels:
-            text = '%s{%s} %s' % (
+            pattern = r'(?ms).*%s\{(%s)\} %s.*' % (
                 name, ','.join(
-                    '%s="%s"' % (labelname, labelvalue)
-                    for labelname, labelvalue in labels
+                    '(?:%s)="(?:%s)"' % (
+                        '|'.join(str(item) for item, _ in labels),
+                        '|'.join(str(item).replace('+', r'\+') for _, item in labels)
+                    ) for _ in labels
                 ), value
             )
         else:
-            text = '%s %s' % (name, value)
+            pattern = '%s %s' % (name, value)
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertIn(text.encode('utf-8'), response.data)
+        self.assertRegexpMatches(response.data, pattern)
+
+        if not labels:
+            return
+
+        match = re.sub(pattern, r'\1', response.data)
+
+        for item in labels:
+            self.assertIn(('%s="%s"' % item).encode('utf-8'), response.data)
 
     def assertAbsent(self, name, *labels, **kwargs):
         if labels:
