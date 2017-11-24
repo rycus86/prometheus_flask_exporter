@@ -6,11 +6,14 @@ python:
 - '3.6'
 
 install: skip
-script: pip install .
+script:
+ - pip install .
+ - PYTHONPATH=src:tests python -m unittest discover -v -s tests
 
 jobs:
   include:
   - stage: deploy
+    script: skip
     deploy:
       provider: pypi
       user: rycus86

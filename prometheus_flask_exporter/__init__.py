@@ -5,6 +5,7 @@ from timeit import default_timer
 from flask import request
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import REGISTRY as DEFAULT_REGISTRY
 
 
 class PrometheusMetrics(object):
@@ -57,7 +58,7 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics', export_defaults=True,
-                 buckets=(0.1, 0.3, 1.2, 5, float('inf'))):
+                 buckets=(0.1, 0.3, 1.2, 5), registry=DEFAULT_REGISTRY):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -66,9 +67,11 @@ class PrometheusMetrics(object):
         :param export_defaults: expose all HTTP request latencies
             and number of HTTP requests
         :param buckets: the time buckets for request latencies
+        :param registry: the Prometheus Registry to use
         """
 
         self.app = app
+        self.registry = registry
 
         if path:
             self.register_endpoint(path)
@@ -87,9 +90,9 @@ class PrometheusMetrics(object):
         @self.do_not_track()
         def prometheus_metrics():
             headers = {'Content-Type': CONTENT_TYPE_LATEST}
-            return generate_latest(), 200, headers
+            return generate_latest(self.registry), 200, headers
 
-    def export_defaults(self, buckets=(0.1, 0.3, 1.2, 5, float('inf'))):
+    def export_defaults(self, buckets=(0.1, 0.3, 1.2, 5)):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -102,13 +105,15 @@ class PrometheusMetrics(object):
             'flask_http_request_duration_seconds',
             'Flask HTTP request duration in seconds',
             ('method', 'path', 'status'),
-            buckets=buckets
+            buckets=buckets,
+            registry=self.registry
         )
 
         counter = Counter(
             'flask_http_request_total',
             'Total number of HTTP requests',
-            ('method', 'status')
+            ('method', 'status'),
+            registry=self.registry
         )
 
         def before_request():
@@ -144,7 +149,9 @@ class PrometheusMetrics(object):
         return self._track(
             Histogram,
             lambda metric, time: metric.observe(time),
-            kwargs, name, description, labels)
+            kwargs, name, description, labels,
+            registry=self.registry
+        )
 
     def summary(self, name, description, labels=None, **kwargs):
         """
@@ -160,7 +167,9 @@ class PrometheusMetrics(object):
         return self._track(
             Summary,
             lambda metric, time: metric.observe(time),
-            kwargs, name, description, labels)
+            kwargs, name, description, labels,
+            registry=self.registry
+        )
 
     def gauge(self, name, description, labels=None, **kwargs):
         """
@@ -177,7 +186,9 @@ class PrometheusMetrics(object):
             Gauge,
             lambda metric, time: metric.dec(),
             kwargs, name, description, labels,
-            before=lambda metric: metric.inc())
+            before=lambda metric: metric.inc(),
+            registry=self.registry
+        )
 
     def counter(self, name, description, labels=None, **kwargs):
         """
@@ -192,7 +203,9 @@ class PrometheusMetrics(object):
         return self._track(
             Counter,
             lambda metric, time: metric.inc(),
-            kwargs, name, description, labels)
+            kwargs, name, description, labels,
+            registry=self.registry
+        )
 
     @staticmethod
     def _track(metric_type, metric_call, metric_kwargs, name, description, labels, before=None):
