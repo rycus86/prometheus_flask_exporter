@@ -1,2 +1,4 @@
 .idea/
 *.pyc
+.coverage
+coverage.xml

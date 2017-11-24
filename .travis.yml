@@ -1,19 +1,37 @@
 language: python
 python:
 - '2.7'
+- '3.3'
 - '3.4'
 - '3.5'
 - '3.6'
 
 install: skip
 script:
- - pip install .
- - PYTHONPATH=src:tests python -m unittest discover -v -s tests
+  # prepare reporters
+  - pip install coveralls
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  # install module
+  - pip install . --upgrade
+  # python tests
+  - python -m coverage run --branch --source=prometheus_flask_exporter -m unittest discover -s tests -v
+  # coverage reports
+  - python -m coverage report -m
+  - python -m coverage xml
+  - |
+    if [[ "$(python --version 2>&1)" = *2.7* ]]; then
+      coveralls || exit 0
+      ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT || exit 0
+    fi
 
 jobs:
   include:
   - stage: deploy
-    script: skip
+    before_deploy:
+      - apt-get -qq update
+      - apt-get install -y pandoc
+      - pandoc --from=markdown --to=rst --output=README.rst README.md
     deploy:
       provider: pypi
       user: rycus86

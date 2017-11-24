@@ -182,3 +182,11 @@ class DefaultsTest(BaseTestCase):
             ('le', '5.0'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
+    def test_invalid_labels(self):
+        metrics = self.metrics()
+
+        self.assertRaises(
+            TypeError, metrics.counter,
+            'invalid_counter', 'Counter with invalid labels',
+            labels=('name', 'value')
+        )
