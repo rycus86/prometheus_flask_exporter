@@ -54,3 +54,94 @@ class MetricsTest(BaseTestCase):
             'hist_3_bucket', '1.0',
             ('le', '0.7'), ('x_value', '3'), ('y_value', '4')
         )
+
+    def test_summary(self):
+        metrics = self.metrics()
+
+        @self.app.route('/test/1')
+        @metrics.summary('sum_1', 'Summary 1')
+        def test1():
+            return 'OK'
+
+        self.client.get('/test/1')
+
+        self.assertMetric('sum_1_count', '1.0')
+
+        @self.app.route('/test/2')
+        @metrics.summary('sum_2', 'Summary 2', labels={
+            'uri': lambda: request.path,
+            'code': lambda r: r.status_code
+        })
+        def test2():
+            return 'OK'
+
+        self.client.get('/test/2')
+
+        self.assertMetric(
+            'sum_2_count', '1.0',
+            ('uri', '/test/2'), ('code', 200)
+        )
+
+    def test_gauge(self):
+        metrics = self.metrics()
+
+        @self.app.route('/test/1')
+        @metrics.gauge('gauge_1', 'Gauge 1')
+        def test1():
+            self.assertMetric('gauge_1', '1.0')
+
+            return 'OK'
+
+        self.client.get('/test/1')
+
+        self.assertMetric('gauge_1', '0.0')
+
+        @self.app.route('/test/<int:a>')
+        @metrics.gauge('gauge_2', 'Gauge 2', labels={
+            'uri': lambda: request.path,
+            'a_value': lambda: request.view_args['a']
+        })
+        def test2(a):
+            self.assertMetric(
+                'gauge_2', '1.0',
+                ('uri', '/test/2'), ('a_value', 2)
+            )
+
+            return 'OK: %d' % a
+
+        self.client.get('/test/2')
+
+        self.assertMetric(
+            'gauge_2', '0.0',
+            ('uri', '/test/2'), ('a_value', 2)
+        )
+
+    def test_counter(self):
+        metrics = self.metrics()
+
+        @self.app.route('/test/1')
+        @metrics.counter('cnt_1', 'Counter 1')
+        def test1():
+            return 'OK'
+
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1', '1.0')
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1', '2.0')
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1', '3.0')
+
+        @self.app.route('/test/2')
+        @metrics.counter('cnt_2', 'Counter 2', labels={
+            'uri': lambda: request.path,
+            'code': lambda r: r.status_code
+        })
+        def test2():
+            return 'OK'
+
+        self.client.get('/test/2')
+
+        self.assertMetric(
+            'cnt_2', '1.0',
+            ('uri', '/test/2'), ('code', 200)
+        )
