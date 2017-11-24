@@ -1,9 +1,8 @@
 from distutils.core import setup
 
 try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except (ImportError, OSError):
+    long_description = open('README.rst').read()
+except IOError:
     long_description = open('README.md').read()
 
 setup(
