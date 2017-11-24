@@ -28,10 +28,11 @@ script:
 jobs:
   include:
   - stage: deploy
+    sudo: true
     script: skip
     before_deploy:
-      - apt-get -qq update
-      - apt-get install -y pandoc
+      - sudo apt-get -qq update
+      - sudo apt-get install -y pandoc
       - pandoc --from=markdown --to=rst --output=README.rst README.md
     deploy:
       provider: pypi
