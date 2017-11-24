@@ -1,20 +1,20 @@
 language: python
 python:
-  - '2.7'
-  - '3.4'
-  - '3.5'
-  - '3.6'
+- '2.7'
+- '3.4'
+- '3.5'
+- '3.6'
 
 install: skip
 script: pip install .
 
 jobs:
   include:
-    - stage: deploy
-      if: branch = master
-      script:
-        - export VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.$((${TRAVIS_BUILD_NUMBER} - ${BUILD_NUMBER_SHIFT}))"
-        - echo "Deploying version ${VERSION}"
-
-env:
-  - MAJOR_VERSION=0   MINOR_VERSION=0   BUILD_NUMBER_SHIFT=5
+  - stage: deploy
+    deploy:
+      provider: pypi
+      user: rycus86
+      password:
+        secure: Vq9IqUARSNkwbS1FbfDKI/dItA/BUAz8Oqig5PphkKobSVELYlpQpZcBmvMPB7BOA8cWWGKpaBrFFFnzAuDCXerDNGYbZyLWNzkYat6ey/xL1uo21mRMiohN1YmL22q5tCdNpGkXzxAIsevYbo01qq/J967yE4GGNXjH1z2NvsNmWulChNYs7xY22HVhkWrz1zuc3kktzn9dRbAjkRpmZY7pm5AsVR+NcqWn1eGQ+mEIwAru0DTB+9Wu3sKUGEPqTBuRe7qfvOxE1WXXqPyjUkhDM41wElTc4HjjHnb12tQKNKPhLSUKUiNFun4MG5IPXE6zLyY+loqFQF2CNNHWlLiOX4UmlCMO7+dCjRvebGYY6yyz2AiHdd+U0JCgPg0dSamaBDiyqvADyhiRBtxRLqJy2sUrNA+xzl7jdEaemyrNoORwKOoe5dHU7eqwdKaQSiD62q6LViR1unMiqoXfx+zgjcL3kV9Y6ZQaX6tnViB6AE3ZM142ZPjPuJi382OyWXKsA2RXGgr3Z6KeQgQO10nzqM6q9ud4XH9r/Ufo1HbkFQrueF2Dq5fmhSOllnAHTo9grZ3kRpmH5go2k6wAywEBsiZKeEi80a45a6O8SjSNcYO1Dq8/v0FkrLug5xRqFRYjU+hXIWlLjvVg9vOFzB1njNy92OIpFCWBu8WSm2A=
+      on:
+        tags: true
