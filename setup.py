@@ -11,5 +11,5 @@ setup(
     download_url='https://github.com/rycus86/prometheus-flask-exporter/archive/0.0.2.tar.gz',
     keywords=['prometheus', 'flask', 'monitoring', 'exporter'],
     classifiers=[],
-    install_requires=['prometheus_client'],
+    install_requires=['prometheus_client', 'flask'],
 )
