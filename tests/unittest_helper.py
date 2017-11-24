@@ -1,4 +1,5 @@
 import re
+import sys
 import unittest
 
 from flask import Flask
@@ -7,6 +8,12 @@ from prometheus_flask_exporter import PrometheusMetrics
 
 
 class BaseTestCase(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        if sys.version_info.major < 3:
+            self.assertRegex = self.assertRegexpMatches
+            self.assertNotRegex = self.assertNotRegexpMatches
+
     def setUp(self):
         self.app = Flask(__name__)
         self.app.testing = True
@@ -27,32 +34,33 @@ class BaseTestCase(unittest.TestCase):
                 ), value
             )
         else:
-            pattern = '%s %s' % (name, value)
+            pattern = '(?ms).*%s %s.*' % (name, value)
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertRegexpMatches(response.data, pattern)
+        self.assertRegex(str(response.data), pattern)
 
         if not labels:
             return
 
-        match = re.sub(pattern, r'\1', response.data)
+        match = re.sub(pattern, r'\1', str(response.data))
 
         for item in labels:
-            self.assertIn(('%s="%s"' % item).encode('utf-8'), response.data)
+            self.assertIn(('%s="%s"' % item), match)
 
     def assertAbsent(self, name, *labels, **kwargs):
         if labels:
-            text = '%s{%s} ' % (
+            pattern = r'(?ms).*%s\{(%s)\} .*' % (
                 name, ','.join(
-                    '%s="%s"' % (labelname, labelvalue)
-                    for labelname, labelvalue in labels
+                    '(?:%s)="(?:%s)"' % (
+                        '|'.join(str(item) for item, _ in labels),
+                        '|'.join(str(item).replace('+', r'\+') for _, item in labels)
+                    ) for _ in labels
                 )
             )
         else:
-            text = '%s ' % name
+            pattern = '.*%s [0-9.]+.*' % name
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn(text.encode('utf-8'), response.data)
-
+        self.assertNotRegex(str(response.data), pattern)
