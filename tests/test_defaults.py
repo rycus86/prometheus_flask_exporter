@@ -32,11 +32,11 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertMetric(
             'flask_http_request_duration_seconds_bucket', '2.0',
-            ('le', '0.3'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+            ('le', '0.5'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
         self.assertMetric(
             'flask_http_request_duration_seconds_bucket', '2.0',
-            ('le', '1.2'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+            ('le', '1.0'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
         self.assertMetric(
             'flask_http_request_duration_seconds_bucket', '2.0',
@@ -59,11 +59,15 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_response_object(self):
-        self.metrics()
+        metrics = self.metrics()
+
+        @metrics.counter('success_invocation', 'Successful invocation')
+        def success():
+            return 200
 
         @self.app.route('/test')
         def test():
-            return make_response('OK', 200)
+            return make_response('OK', success())
 
         self.client.get('/test')
         self.client.get('/test')
@@ -76,6 +80,8 @@ class DefaultsTest(BaseTestCase):
             'flask_http_request_duration_seconds_count', '2.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
+
+        self.assertMetric('success_invocation', '2.0')
 
     def test_skip(self):
         metrics = self.metrics()
@@ -211,3 +217,26 @@ class DefaultsTest(BaseTestCase):
             'invalid_counter', 'Counter with invalid labels',
             labels=('name', 'value')
         )
+
+    def test_info(self):
+        metrics = self.metrics()
+
+        metrics.info('info', 'Info', x=1, y=2)
+
+        self.assertMetric('info', '1.0', ('x', 1), ('y', 2))
+
+        sample = metrics.info(
+            'sample', 'Sample', ('key',), ('value',)
+        )
+        sample.set(5)
+
+        self.assertMetric('sample', '5.0', ('key', 'value'))
+
+        self.assertRaises(
+            ValueError, metrics.info, 'invalid', 'Invalid',
+            ('both', 'names'), ('and', 'values'), are='defined'
+        )
+
+        metrics.info('no_labels', 'Without labels')
+
+        self.assertMetric('no_labels', '1.0')

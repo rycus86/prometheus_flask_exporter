@@ -70,7 +70,8 @@ class MetricsTest(BaseTestCase):
         @self.app.route('/test/2')
         @metrics.summary('sum_2', 'Summary 2', labels={
             'uri': lambda: request.path,
-            'code': lambda r: r.status_code
+            'code': lambda r: r.status_code,
+            'variant': 2
         })
         def test2():
             return 'OK'
@@ -79,7 +80,7 @@ class MetricsTest(BaseTestCase):
 
         self.assertMetric(
             'sum_2_count', '1.0',
-            ('uri', '/test/2'), ('code', 200)
+            ('uri', '/test/2'), ('code', 200), ('variant', 2)
         )
 
     def test_gauge(self):

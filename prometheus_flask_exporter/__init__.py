@@ -21,6 +21,9 @@ class PrometheusMetrics(object):
         app = Flask(__name__)
         metrics = PrometheusMetrics(app)
 
+        # static information as metric
+        metrics.info('app_info', 'Application info', version='1.0.3')
+
         @app.route('/')
         def main():
             pass  # requests tracked by default
@@ -58,7 +61,7 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics', export_defaults=True,
-                 buckets=(0.1, 0.3, 1.2, 5), registry=DEFAULT_REGISTRY):
+                 buckets=None, registry=DEFAULT_REGISTRY):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -67,6 +70,7 @@ class PrometheusMetrics(object):
         :param export_defaults: expose all HTTP request latencies
             and number of HTTP requests
         :param buckets: the time buckets for request latencies
+            (will use the default when `None`)
         :param registry: the Prometheus Registry to use
         """
 
@@ -92,21 +96,27 @@ class PrometheusMetrics(object):
             headers = {'Content-Type': CONTENT_TYPE_LATEST}
             return generate_latest(self.registry), 200, headers
 
-    def export_defaults(self, buckets=(0.1, 0.3, 1.2, 5)):
+    def export_defaults(self, buckets=None):
         """
         Export the default metrics:
             - HTTP request latencies
             - Number of HTTP requests
 
         :param buckets: the time buckets for request latencies
+            (will use the default when `None`)
         """
+
+        # use the default buckets from prometheus_client if not given here
+        buckets_as_kwargs = {}
+        if buckets is not None:
+            buckets_as_kwargs['buckets'] = buckets
 
         histogram = Histogram(
             'flask_http_request_duration_seconds',
             'Flask HTTP request duration in seconds',
             ('method', 'path', 'status'),
-            buckets=buckets,
-            registry=self.registry
+            registry=self.registry,
+            **buckets_as_kwargs
         )
 
         counter = Counter(
@@ -142,7 +152,7 @@ class PrometheusMetrics(object):
 
         :param name: the name of the metric
         :param description: the description of the metric
-        :param labels: a dictionary of `{labelname: callable}` for labels
+        :param labels: a dictionary of `{labelname: callable_or_value}` for labels
         :param kwargs: additional keyword arguments for creating the Histogram
         """
 
@@ -160,7 +170,7 @@ class PrometheusMetrics(object):
 
         :param name: the name of the metric
         :param description: the description of the metric
-        :param labels: a dictionary of `{labelname: callable}` for labels
+        :param labels: a dictionary of `{labelname: callable_or_value}` for labels
         :param kwargs: additional keyword arguments for creating the Summary
         """
 
@@ -178,7 +188,7 @@ class PrometheusMetrics(object):
 
         :param name: the name of the metric
         :param description: the description of the metric
-        :param labels: a dictionary of `{labelname: callable}` for labels
+        :param labels: a dictionary of `{labelname: callable_or_value}` for labels
         :param kwargs: additional keyword arguments for creating the Gauge
         """
 
@@ -196,7 +206,7 @@ class PrometheusMetrics(object):
 
         :param name: the name of the metric
         :param description: the description of the metric
-        :param labels: a dictionary of `{labelname: callable}` for labels
+        :param labels: a dictionary of `{labelname: callable_or_value}` for labels
         :param kwargs: additional keyword arguments for creating the Counter
         """
 
@@ -218,7 +228,7 @@ class PrometheusMetrics(object):
         :param metric_kwargs: additional keyword arguments for creating the metric
         :param name: the name of the metric
         :param description: the description of the metric
-        :param labels: a dictionary of `{labelname: callable}` for labels
+        :param labels: a dictionary of `{labelname: callable_or_value}` for labels
         :param before: an optional callable to invoke before executing the
             request handler method accepting the single `metric` argument
         :param registry: the Prometheus Registry to use
@@ -227,11 +237,24 @@ class PrometheusMetrics(object):
         if labels is not None and not isinstance(labels, dict):
             raise TypeError('labels needs to be a dictionary of {labelname: callable}')
 
-        def wrap_call(f):
+        label_names = labels.keys() if labels else tuple()
+        parent_metric = metric_type(
+            name, description, labelnames=label_names, registry=registry,
+            **metric_kwargs
+        )
+
+        def label_value(f):
+            if not callable(f):
+                return lambda x: f
             if inspect.getargspec(f).args:
                 return lambda x: f(x)
             else:
                 return lambda x: f()
+
+        label_generator = tuple(
+            (key, label_value(call))
+            for key, call in labels.items()
+        ) if labels else tuple()
 
         def get_metric(response):
             if label_names:
@@ -240,17 +263,6 @@ class PrometheusMetrics(object):
                 )
             else:
                 return parent_metric
-
-        label_names = labels.keys() if labels else tuple()
-        parent_metric = metric_type(
-            name, description, labelnames=label_names, registry=registry,
-            **metric_kwargs
-        )
-
-        label_generator = tuple(
-            (key, wrap_call(call))
-            for key, call in labels.items()
-        ) if labels else tuple()
 
         def decorator(f):
             @functools.wraps(f)
@@ -270,7 +282,9 @@ class PrometheusMetrics(object):
                     response_for_metric = response
 
                     if not isinstance(response, Response):
-                        response_for_metric = make_response(response)
+                        if request.endpoint == f.__name__:
+                            # we are in a request handler method
+                            response_for_metric = make_response(response)
 
                     metric = get_metric(response_for_metric)
 
@@ -296,3 +310,58 @@ class PrometheusMetrics(object):
                 return f(*args, **kwargs)
             return func
         return decorator
+
+    def info(self, name, description, labelnames=None, labelvalues=None, **labels):
+        """
+        Report any information as a Prometheus metric.
+        This will create a `Gauge` with the initial value of 1.
+
+        The easiest way to use it is:
+
+            metrics = PrometheusMetrics(app)
+            metrics.info(
+                'app_info', 'Application info',
+                version='1.0', major=1, minor=0
+            )
+
+        If the order of the labels matters:
+
+            metrics = PrometheusMetrics(app)
+            metrics.info(
+                'app_info', 'Application info',
+                ('version', 'major', 'minor'),
+                ('1.0', 1, 0)
+            )
+
+        :param name: the name of the metric
+        :param description: the description of the metric
+        :param labelnames: the names of the labels
+        :param labelvalues: the values of the labels
+        :param labels: the names and values of the labels
+        :return: the newly created `Gauge` metric
+        """
+
+        if labels and labelnames:
+            raise ValueError(
+                'Cannot have labels defined as `dict` '
+                'and collections of names and values'
+            )
+
+        if labelnames is None and labels:
+            labelnames = labels.keys()
+
+        elif labelnames and labelvalues:
+            for idx, label_name in enumerate(labelnames):
+                labels[label_name] = labelvalues[idx]
+
+        gauge = Gauge(
+            name, description, labelnames,
+            registry=self.registry
+        )
+
+        if labels:
+            gauge = gauge.labels(**labels)
+
+        gauge.set(1)
+
+        return gauge

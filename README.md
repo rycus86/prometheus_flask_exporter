@@ -19,6 +19,9 @@ from prometheus_flask_exporter import PrometheusMetrics
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 
+# static information as metric
+metrics.info('app_info', 'Application info', version='1.0.3')
+
 @app.route('/')
 def main():
     pass  # requests tracked by default
@@ -48,6 +51,33 @@ def long_running():
                    labels={'status': lambda r: r.status_code, 'path': lambda: request.path})
 def echo_status(status):
     return 'Status: %s' % status, status
+```
+
+### Labels
+
+When defining labels for metrics on functions,
+the following values are supported in the dictionary:
+
+- A simple static value
+- A no-argument callable
+- A single argument callable that will receive the Flask response
+  as the argument
+
+Label values are evaluated within the request context.
+
+### Application information
+
+The `PrometheusMetrics.info(..)` method provides a way to expose
+information as a `Gauge` metric, the application version for example.
+
+The metric is returned from the method to allow changing its value
+from the default `1`:
+
+```python
+metrics = PrometheusMetrics(app)
+info = metrics.info('dynamic_info', 'Something dynamic')
+...
+info.set(42.1)
 ```
 
 ## License
