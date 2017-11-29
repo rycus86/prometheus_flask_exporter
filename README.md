@@ -53,6 +53,20 @@ def echo_status(status):
     return 'Status: %s' % status, status
 ```
 
+## Default metrics
+
+The following metrics are exported by default
+(unless the `export_defaults` is set to `False`).
+
+- `flask_http_request_duration_seconds` (Histogram)  
+  Labels: `method`, `path` and `status`.  
+  Flask HTTP request duration in seconds for all Flask requests.
+- `flask_http_request_total` (Counter)  
+  Labels: `method` and `status`.
+  Total number of HTTP requests for all Flask requests.
+- `prometheus_flask_exporter_info` (Gauge)  
+  Information about the Prometheus Flask exporter itself (e.g. `version`).
+
 ### Labels
 
 When defining labels for metrics on functions,
