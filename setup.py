@@ -14,8 +14,8 @@ setup(
     license='MIT',
     author='Viktor Adam',
     author_email='rycus86@gmail.com',
-    url='https://github.com/rycus86/prometheus-flask-exporter',
-    download_url='https://github.com/rycus86/prometheus-flask-exporter/archive/0.0.7.tar.gz',
+    url='https://github.com/rycus86/prometheus_flask_exporter',
+    download_url='https://github.com/rycus86/prometheus_flask_exporter/archive/0.0.7.tar.gz',
     keywords=['prometheus', 'flask', 'monitoring', 'exporter'],
     classifiers=[
         'Development Status :: 4 - Beta',
