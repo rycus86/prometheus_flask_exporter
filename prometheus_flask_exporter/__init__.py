@@ -76,6 +76,7 @@ class PrometheusMetrics(object):
 
         self.app = app
         self.registry = registry
+        self.version = __version__
 
         if path:
             self.register_endpoint(path)
@@ -124,6 +125,12 @@ class PrometheusMetrics(object):
             'Total number of HTTP requests',
             ('method', 'status'),
             registry=self.registry
+        )
+
+        self.info(
+            'prometheus_flask_exporter_info',
+            'Information about the Prometheus Flask exporter',
+            version=self.version
         )
 
         def before_request():
@@ -365,3 +372,6 @@ class PrometheusMetrics(object):
         gauge.set(1)
 
         return gauge
+
+
+__version__ = '0.0.6'

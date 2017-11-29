@@ -5,7 +5,12 @@ from flask import make_response
 
 class DefaultsTest(BaseTestCase):
     def test_simple(self):
-        self.metrics()
+        metrics = self.metrics()
+
+        self.assertMetric(
+            'prometheus_flask_exporter_info', '1.0',
+            ('version', metrics.version)
+        )
 
         @self.app.route('/test')
         def test():
