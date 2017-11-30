@@ -128,7 +128,7 @@ class PrometheusMetrics(object):
         )
 
         self.info(
-            'prometheus_flask_exporter_info',
+            'flask_exporter_info',
             'Information about the Prometheus Flask exporter',
             version=self.version
         )

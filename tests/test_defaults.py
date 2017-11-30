@@ -8,7 +8,7 @@ class DefaultsTest(BaseTestCase):
         metrics = self.metrics()
 
         self.assertMetric(
-            'prometheus_flask_exporter_info', '1.0',
+            'flask_exporter_info', '1.0',
             ('version', metrics.version)
         )
 

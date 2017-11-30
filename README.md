@@ -64,7 +64,7 @@ The following metrics are exported by default
 - `flask_http_request_total` (Counter)  
   Labels: `method` and `status`.
   Total number of HTTP requests for all Flask requests.
-- `prometheus_flask_exporter_info` (Gauge)  
+- `flask_exporter_info` (Gauge)  
   Information about the Prometheus Flask exporter itself (e.g. `version`).
 
 ### Labels
