@@ -123,9 +123,10 @@ class PrometheusMetrics(object):
         app = Flask('prometheus-flask-exporter-%d' % port)
         self.register_endpoint(endpoint, app)
 
-        runner = lambda: app.run(host=host, port=port)
+        def run_app():
+            app.run(host=host, port=port)
 
-        thread = threading.Thread(target=runner)
+        thread = threading.Thread(target=run_app)
         thread.setDaemon(True)
         thread.start()
 
@@ -406,4 +407,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
