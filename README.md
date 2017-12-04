@@ -67,7 +67,23 @@ The following metrics are exported by default
 - `flask_exporter_info` (Gauge)  
   Information about the Prometheus Flask exporter itself (e.g. `version`).
 
-### Labels
+## Configuration
+
+By default, the metrics are exposed on the same Flask application on the
+`/metrics` endpoint and using the core Prometheus registry.
+If this doesn't suit your needs, set the `path` argument to `None` and/or
+the `export_defaults` argument to `False` plus change the `registry`
+argument if needed.
+
+The `register_endpoint` allows exposing the metrics endpoint on a specific path.
+It also allows passing in a Flask application to register it on but defaults
+to the main one if not defined.
+
+Similarly, the `start_http_server` allows exposing the endpoint on an
+independent Flask application on a selected HTTP port.
+It also supports overriding the endpoint's path and the HTTP listen address.
+
+## Labels
 
 When defining labels for metrics on functions,
 the following values are supported in the dictionary:
@@ -79,7 +95,7 @@ the following values are supported in the dictionary:
 
 Label values are evaluated within the request context.
 
-### Application information
+## Application information
 
 The `PrometheusMetrics.info(..)` method provides a way to expose
 information as a `Gauge` metric, the application version for example.
