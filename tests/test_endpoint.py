@@ -1,5 +1,7 @@
 from unittest_helper import BaseTestCase
 
+import time
+
 try:
     from urllib2 import urlopen
 except:
@@ -46,6 +48,18 @@ class EndpointTest(BaseTestCase):
         metrics.start_http_server(32001)
         metrics.start_http_server(32002, endpoint='/test/metrics')
         metrics.start_http_server(32003, host='127.0.0.1')
+        
+        def wait_for_startup():
+            for _ in range(10):
+                try:
+                    urlopen('http://localhost:32001/metrics')
+                    urlopen('http://localhost:32002/test/metrics')
+                    urlopen('http://localhost:32003/metrics')
+                    break
+                except:
+                    time.sleep(0.5)
+
+        wait_for_startup()
 
         response = urlopen('http://localhost:32001/metrics')
 
