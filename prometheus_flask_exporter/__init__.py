@@ -1,8 +1,10 @@
 import inspect
 import functools
+import threading
 from timeit import default_timer
 
-from flask import request, Response, make_response
+from flask import request, make_response
+from flask import Flask, Response
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
@@ -84,18 +86,48 @@ class PrometheusMetrics(object):
         if export_defaults:
             self.export_defaults(buckets)
 
-    def register_endpoint(self, path):
+    def register_endpoint(self, path, app=None):
         """
         Register the metrics endpoint on the Flask application.
 
         :param path: the path of the endpoint
+        :param app: the Flask application to register the endpoint on
+            (by default it is the application registered with this class)
         """
 
-        @self.app.route(path)
+        if app is None:
+            app = self.app
+
+        @app.route(path)
         @self.do_not_track()
         def prometheus_metrics():
+            registry = self.registry
+            if 'name[]' in request.args:
+                registry = registry.restricted_registry(request.args.getlist('name[]'))
+
             headers = {'Content-Type': CONTENT_TYPE_LATEST}
-            return generate_latest(self.registry), 200, headers
+            return generate_latest(registry), 200, headers
+
+    def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
+        """
+        Start an HTTP server for exposing the metrics.
+        This will be an individual Flask application,
+        not the one registered with this class.
+
+        :param port: the HTTP port to expose the metrics endpoint on
+        :param host: the HTTP host to listen on (default: `0.0.0.0`)
+        :param endpoint: the URL path to expose the endpoint on
+            (default: `/metrics`)
+        """
+
+        app = Flask('prometheus-flask-exporter-%d' % port)
+        self.register_endpoint(endpoint, app)
+
+        runner = lambda: app.run(host=host, port=port)
+
+        thread = threading.Thread(target=runner)
+        thread.setDaemon(True)
+        thread.start()
 
     def export_defaults(self, buckets=None):
         """
