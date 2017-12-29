@@ -5,6 +5,7 @@ from timeit import default_timer
 
 from flask import request, make_response
 from flask import Flask, Response
+from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
@@ -315,7 +316,13 @@ class PrometheusMetrics(object):
                     metric = None
 
                 start_time = default_timer()
-                response = f(*args, **kwargs)
+                try:
+                    response = f(*args, **kwargs)
+                except HTTPException as ex:
+                    response = ex
+                except Exception as ex:
+                    response = make_response('Exception: %s' % ex, 500)
+
                 total_time = max(default_timer() - start_time, 0)
 
                 if not metric:
@@ -407,4 +414,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
