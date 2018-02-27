@@ -148,6 +148,34 @@ class DefaultsTest(BaseTestCase):
             endpoint='/metrics'
         )
 
+    def test_group_by_endpoint(self):
+        self.metrics(group_by_endpoint=True)
+
+        @self.app.route('/<url>')
+        def a_test_endpoint(url):
+            return url + ' is OK'
+
+        self.client.get('/test')
+        self.client.get('/test2')
+        self.client.get('/test3')
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_bucket', '3.0',
+            ('endpoint', 'a_test_endpoint'), ('status', 200),
+            ('le', '+Inf'),('method', 'GET'),
+            endpoint='/metrics'
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '3.0',
+            ('endpoint', 'a_test_endpoint'), ('status', 200), ('method', 'GET'),
+            endpoint='/metrics'
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_bucket',
+            ('path', '/test'),
+            endpoint='/metrics'
+        )
+
     def test_non_automatic_endpoint_registration(self):
         metrics = self.metrics(path=None)
 
