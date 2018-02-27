@@ -63,8 +63,9 @@ class PrometheusMetrics(object):
         - Without an argument, possibly to use with the Flask `request` object
     """
 
-    def __init__(self, app, path='/metrics', export_defaults=True,
-                 buckets=None, registry=DEFAULT_REGISTRY, group_by_endpoint=False):
+    def __init__(self, app, path='/metrics',
+                 export_defaults=True, group_by_endpoint=False,
+                 buckets=None, registry=DEFAULT_REGISTRY):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -72,13 +73,14 @@ class PrometheusMetrics(object):
         :param path: the metrics path (defaults to `/metrics`)
         :param export_defaults: expose all HTTP request latencies
             and number of HTTP requests
+        :param group_by_endpoint: group default HTTP metrics
+            by the endpoints' function name instead of the URI path
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
         :param registry: the Prometheus Registry to use
         """
 
         self.app = app
-        self.group_by = 'endpoint' if group_by_endpoint else 'path'
         self.registry = registry
         self.version = __version__
 
@@ -86,7 +88,7 @@ class PrometheusMetrics(object):
             self.register_endpoint(path)
 
         if export_defaults:
-            self.export_defaults(buckets)
+            self.export_defaults(buckets, group_by_endpoint)
 
     def register_endpoint(self, path, app=None):
         """
@@ -132,7 +134,7 @@ class PrometheusMetrics(object):
         thread.setDaemon(True)
         thread.start()
 
-    def export_defaults(self, buckets=None):
+    def export_defaults(self, buckets=None, group_by_endpoint=False):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -140,6 +142,8 @@ class PrometheusMetrics(object):
 
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
+        :param group_by_endpoint: group default HTTP metrics
+            by the endpoints' function name instead of the URI path
         """
 
         # use the default buckets from prometheus_client if not given here
@@ -147,10 +151,12 @@ class PrometheusMetrics(object):
         if buckets is not None:
             buckets_as_kwargs['buckets'] = buckets
 
+        duration_group = 'endpoint' if group_by_endpoint else 'path'
+
         histogram = Histogram(
             'flask_http_request_duration_seconds',
             'Flask HTTP request duration in seconds',
-            ('method', self.group_by, 'status'),
+            ('method', duration_group, 'status'),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -176,12 +182,12 @@ class PrometheusMetrics(object):
                 return response
 
             total_time = max(default_timer() - request.prom_start_time, 0)
-
             histogram.labels(
                 request.method,
-                getattr(request, self.group_by),
+                getattr(request, duration_group),
                 response.status_code
             ).observe(total_time)
+
             counter.labels(request.method, response.status_code).inc()
 
             return response
@@ -417,4 +423,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.1.2'
+__version__ = '0.2.0'

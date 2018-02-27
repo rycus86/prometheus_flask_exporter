@@ -73,7 +73,9 @@ By default, the metrics are exposed on the same Flask application on the
 `/metrics` endpoint and using the core Prometheus registry.
 If this doesn't suit your needs, set the `path` argument to `None` and/or
 the `export_defaults` argument to `False` plus change the `registry`
-argument if needed.
+argument if needed. The `group_by_endpoint` constructor flag makes
+the default request duration metric tracked by endpoint (function)
+instead of URI path.
 
 The `register_endpoint` allows exposing the metrics endpoint on a specific path.
 It also allows passing in a Flask application to register it on but defaults

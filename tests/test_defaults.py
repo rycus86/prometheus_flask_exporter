@@ -162,7 +162,7 @@ class DefaultsTest(BaseTestCase):
         self.assertMetric(
             'flask_http_request_duration_seconds_bucket', '3.0',
             ('endpoint', 'a_test_endpoint'), ('status', 200),
-            ('le', '+Inf'),('method', 'GET'),
+            ('le', '+Inf'), ('method', 'GET'),
             endpoint='/metrics'
         )
         self.assertMetric(
@@ -170,9 +170,11 @@ class DefaultsTest(BaseTestCase):
             ('endpoint', 'a_test_endpoint'), ('status', 200), ('method', 'GET'),
             endpoint='/metrics'
         )
+
         self.assertAbsent(
             'flask_http_request_duration_seconds_bucket',
-            ('path', '/test'),
+            ('path', '/test'), ('status', 200),
+            ('le', '+Inf'), ('method', 'GET'),
             endpoint='/metrics'
         )
 
