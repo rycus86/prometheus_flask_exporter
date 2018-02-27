@@ -64,7 +64,7 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics', export_defaults=True,
-                 buckets=None, registry=DEFAULT_REGISTRY):
+                 buckets=None, registry=DEFAULT_REGISTRY, group_by_endpoint=False):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -78,6 +78,7 @@ class PrometheusMetrics(object):
         """
 
         self.app = app
+        self.group_by = 'endpoint' if group_by_endpoint else 'path'
         self.registry = registry
         self.version = __version__
 
@@ -149,7 +150,7 @@ class PrometheusMetrics(object):
         histogram = Histogram(
             'flask_http_request_duration_seconds',
             'Flask HTTP request duration in seconds',
-            ('method', 'path', 'status'),
+            ('method', self.group_by, 'status'),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -175,10 +176,12 @@ class PrometheusMetrics(object):
                 return response
 
             total_time = max(default_timer() - request.prom_start_time, 0)
-            histogram.labels(
-                request.method, request.path, response.status_code
-            ).observe(total_time)
 
+            histogram.labels(
+                request.method,
+                getattr(request, self.group_by),
+                response.status_code
+            ).observe(total_time)
             counter.labels(request.method, response.status_code).inc()
 
             return response
