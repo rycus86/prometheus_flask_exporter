@@ -42,3 +42,7 @@ jobs:
       skip_cleanup: true
       on:
         tags: true
+
+  - stage: verify
+    script:
+      - pip install prometheus-flask-exporter
