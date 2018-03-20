@@ -5,6 +5,7 @@ from timeit import default_timer
 
 from flask import request, make_response
 from flask import Flask, Response
+from werkzeug.serving import is_running_from_reloader
 from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
@@ -99,6 +100,9 @@ class PrometheusMetrics(object):
             (by default it is the application registered with this class)
         """
 
+        if is_running_from_reloader():
+            return
+
         if app is None:
             app = self.app
 
@@ -123,6 +127,9 @@ class PrometheusMetrics(object):
         :param endpoint: the URL path to expose the endpoint on
             (default: `/metrics`)
         """
+
+        if is_running_from_reloader():
+            return
 
         app = Flask('prometheus-flask-exporter-%d' % port)
         self.register_endpoint(endpoint, app)
@@ -423,4 +430,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
