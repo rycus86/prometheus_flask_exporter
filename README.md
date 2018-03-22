@@ -112,6 +112,13 @@ info = metrics.info('dynamic_info', 'Something dynamic')
 info.set(42.1)
 ```
 
+## Debug mode
+
+Please note, that changes being live-reloaded, when running the Flask
+app with `debug=True`, are not going to be reflected in the metrics.
+See [https://github.com/rycus86/prometheus_flask_exporter/issues/4](https://github.com/rycus86/prometheus_flask_exporter/issues/4)
+for more details.
+
 ## License
 
 MIT
