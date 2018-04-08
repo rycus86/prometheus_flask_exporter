@@ -119,6 +119,12 @@ app with `debug=True`, are not going to be reflected in the metrics.
 See [https://github.com/rycus86/prometheus_flask_exporter/issues/4](https://github.com/rycus86/prometheus_flask_exporter/issues/4)
 for more details.
 
+## WSGI
+
+Getting accurate metrics for WSGI apps might require a bit more setup.
+See a working sample app in the `examples` folder, and also the
+[prometheus_flask_exporter#5](https://github.com/rycus86/prometheus_flask_exporter/issues/5) issue.
+
 ## License
 
 MIT
