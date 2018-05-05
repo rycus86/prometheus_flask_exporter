@@ -112,6 +112,13 @@ info = metrics.info('dynamic_info', 'Something dynamic')
 info.set(42.1)
 ```
 
+## Examples
+
+See some simple examples visualized on a Grafana dashboard by running
+the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/wsgi) folder.
+
+![Example dashboard](examples/sample-signals/dashboard.png)
+
 ## Debug mode
 
 Please note, that changes being live-reloaded, when running the Flask
