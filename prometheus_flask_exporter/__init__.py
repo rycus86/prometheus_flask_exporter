@@ -108,29 +108,22 @@ class PrometheusMetrics(object):
         if app is None:
             app = self.app
 
-        if 'prometheus_multiproc_dir' in os.environ:
-            @app.route(path)
-            @self.do_not_track()
-            def prometheus_metrics():
+        @app.route(path)
+        @self.do_not_track()
+        def prometheus_metrics():
+            if 'prometheus_multiproc_dir' in os.environ:
                 registry = CollectorRegistry()
-                if 'name[]' in request.args:
-                    registry = registry.restricted_registry(request.args.getlist('name[]'))
+            else:
+                registry = self.registry
 
+            if 'name[]' in request.args:
+                registry = registry.restricted_registry(request.args.getlist('name[]'))
+
+            if 'prometheus_multiproc_dir' in os.environ:
                 multiprocess.MultiProcessCollector(registry)
 
-                headers = {'Content-Type': CONTENT_TYPE_LATEST}
-                return generate_latest(registry), 200, headers
-
-        else:
-            @app.route(path)
-            @self.do_not_track()
-            def prometheus_metrics():
-                registry = self.registry
-                if 'name[]' in request.args:
-                    registry = registry.restricted_registry(request.args.getlist('name[]'))
-
-                headers = {'Content-Type': CONTENT_TYPE_LATEST}
-                return generate_latest(registry), 200, headers
+            headers = {'Content-Type': CONTENT_TYPE_LATEST}
+            return generate_latest(registry), 200, headers
 
     def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
         """
