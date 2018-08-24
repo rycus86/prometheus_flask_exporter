@@ -1,6 +1,7 @@
 import inspect
 import functools
 import threading
+import os
 from timeit import default_timer
 
 from flask import request, make_response
@@ -10,6 +11,7 @@ from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
+from prometheus_client import multiprocess, CollectorRegistry
 
 
 class PrometheusMetrics(object):
@@ -106,15 +108,29 @@ class PrometheusMetrics(object):
         if app is None:
             app = self.app
 
-        @app.route(path)
-        @self.do_not_track()
-        def prometheus_metrics():
-            registry = self.registry
-            if 'name[]' in request.args:
-                registry = registry.restricted_registry(request.args.getlist('name[]'))
+        if 'prometheus_multiproc_dir' in os.environ:
+            @app.route(path)
+            @self.do_not_track
+            def prometheus_metrics():
+                registry = CollectorRegistry()
+                if 'name[]' in request.args:
+                    registry = registry.restricted_registry(request.args.getlist('name[]'))
 
-            headers = {'Content-Type': CONTENT_TYPE_LATEST}
-            return generate_latest(registry), 200, headers
+                multiprocess.MultiProcessCollector(registry)
+
+                headers = {'Content-Type': CONTENT_TYPE_LATEST}
+                return generate_latest(registry), 200, headers
+
+        else:
+            @app.route(path)
+            @self.do_not_track()
+            def prometheus_metrics():
+                registry = self.registry
+                if 'name[]' in request.args:
+                    registry = registry.restricted_registry(request.args.getlist('name[]'))
+
+                headers = {'Content-Type': CONTENT_TYPE_LATEST}
+                return generate_latest(registry), 200, headers
 
     def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
         """
