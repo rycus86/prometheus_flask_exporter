@@ -110,7 +110,7 @@ class PrometheusMetrics(object):
 
         if 'prometheus_multiproc_dir' in os.environ:
             @app.route(path)
-            @self.do_not_track
+            @self.do_not_track()
             def prometheus_metrics():
                 registry = CollectorRegistry()
                 if 'name[]' in request.args:
