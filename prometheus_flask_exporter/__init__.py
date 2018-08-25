@@ -1,7 +1,7 @@
+import os
 import inspect
 import functools
 import threading
-import os
 from timeit import default_timer
 
 from flask import request, make_response
@@ -439,4 +439,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
