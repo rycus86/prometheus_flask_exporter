@@ -4,7 +4,7 @@ import functools
 import threading
 from timeit import default_timer
 
-from flask import request, make_response
+from flask import request, make_response, current_app
 from flask import Flask, Response
 from werkzeug.serving import is_running_from_reloader
 from werkzeug.exceptions import HTTPException
@@ -66,7 +66,7 @@ class PrometheusMetrics(object):
         - Without an argument, possibly to use with the Flask `request` object
     """
 
-    def __init__(self, app, path='/metrics',
+    def __init__(self, app=None, path='/metrics',
                  export_defaults=True, group_by_endpoint=False,
                  buckets=None, registry=DEFAULT_REGISTRY):
         """
@@ -82,16 +82,35 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param registry: the Prometheus Registry to use
         """
+        self._options = {
+            'path' : path,
+            'export_defaults' : export_defaults,
+            'group_by_endpoint' : group_by_endpoint,
+            'buckets' : buckets,
+            'registry' : registry,
+        }
 
-        self.app = app
-        self.registry = registry
+        if app:
+            self.init_app(app)
+
+    def init_app(self, app, **kwargs):
+        """
+        See the arguments for __init__ for more info.
+        """
+        self._options.update(kwargs)
+
+        self.registry = self._options.get('registry')
         self.version = __version__
 
+        path = self._options.get('path')
         if path:
-            self.register_endpoint(path)
+            self.register_endpoint(path, app)
 
+        export_defaults = self._options.get('export_defaults')
         if export_defaults:
-            self.export_defaults(buckets, group_by_endpoint)
+            buckets = self._options.get('buckets')
+            group_by_endpoint = self._options.get('group_by_endpoint')
+            self.export_defaults(buckets, group_by_endpoint, app)
 
     def register_endpoint(self, path, app=None):
         """
@@ -105,8 +124,7 @@ class PrometheusMetrics(object):
         if is_running_from_reloader():
             return
 
-        if app is None:
-            app = self.app
+        app = app or current_app
 
         @app.route(path)
         @self.do_not_track()
@@ -150,7 +168,7 @@ class PrometheusMetrics(object):
         thread.setDaemon(True)
         thread.start()
 
-    def export_defaults(self, buckets=None, group_by_endpoint=False):
+    def export_defaults(self, buckets=None, group_by_endpoint=False, app=None):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -161,6 +179,9 @@ class PrometheusMetrics(object):
         :param group_by_endpoint: group default HTTP metrics
             by the endpoints' function name instead of the URI path
         """
+
+        if not app:
+            app = current_app
 
         # use the default buckets from prometheus_client if not given here
         buckets_as_kwargs = {}
@@ -208,8 +229,8 @@ class PrometheusMetrics(object):
 
             return response
 
-        self.app.before_request(before_request)
-        self.app.after_request(after_request)
+        app.before_request(before_request)
+        app.after_request(after_request)
 
     def histogram(self, name, description, labels=None, **kwargs):
         """

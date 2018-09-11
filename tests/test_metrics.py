@@ -19,7 +19,7 @@ class MetricsTest(BaseTestCase):
 
         @self.app.route('/test/2')
         @metrics.histogram('hist_2', 'Histogram 2', labels={
-            'uri': lambda: request.path, 
+            'uri': lambda: request.path,
             'code': lambda r: r.status_code
         })
         def test2():
