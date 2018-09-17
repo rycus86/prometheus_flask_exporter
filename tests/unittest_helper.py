@@ -17,7 +17,6 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)
         self.app.testing = True
-        self.app.app_context().push()
         self.client = self.app.test_client()
 
     def metrics(self, **kwargs):

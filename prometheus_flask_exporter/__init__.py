@@ -82,35 +82,32 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param registry: the Prometheus Registry to use
         """
-        self._options = {
-            'path' : path,
-            'export_defaults' : export_defaults,
-            'group_by_endpoint' : group_by_endpoint,
-            'buckets' : buckets,
-            'registry' : registry,
-        }
-
-        if app:
-            self.init_app(app)
-
-    def init_app(self, app, **kwargs):
-        """
-        See the arguments for __init__ for more info.
-        """
-        self._options.update(kwargs)
-
-        self.registry = self._options.get('registry')
+        self.path = path
+        self._export_defaults = export_defaults
+        self.group_by_endpoint = group_by_endpoint
+        self.buckets = buckets
+        self.registry = registry
         self.version = __version__
 
-        path = self._options.get('path')
-        if path:
-            self.register_endpoint(path, app)
+        if app is not None:
+            self.init_app(app)
 
-        export_defaults = self._options.get('export_defaults')
-        if export_defaults:
-            buckets = self._options.get('buckets')
-            group_by_endpoint = self._options.get('group_by_endpoint')
-            self.export_defaults(buckets, group_by_endpoint, app)
+    def init_app(self, app):
+        """This callback can be used to initialize an application for the
+        use with this prometheus reporter setup.
+
+        This is usually used with a flask "app factory" configuration. Please
+        see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
+
+        :param app: the Flask application
+        """
+        self.app = app
+
+        if self.path:
+            self.register_endpoint(self.path, app)
+
+        if self._export_defaults:
+            self.export_defaults(self.buckets, self.group_by_endpoint, app)
 
     def register_endpoint(self, path, app=None):
         """
@@ -124,7 +121,8 @@ class PrometheusMetrics(object):
         if is_running_from_reloader():
             return
 
-        app = app or current_app
+        if app is None:
+            app = self.app or current_app
 
         @app.route(path)
         @self.do_not_track()
@@ -180,8 +178,8 @@ class PrometheusMetrics(object):
             by the endpoints' function name instead of the URI path
         """
 
-        if not app:
-            app = current_app
+        if app is None:
+            app = self.app or current_app
 
         # use the default buckets from prometheus_client if not given here
         buckets_as_kwargs = {}

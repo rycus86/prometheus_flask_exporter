@@ -1,19 +1,30 @@
+import sys
+import unittest
+
+from flask import Flask
 from unittest_helper import BaseTestCase
 from prometheus_flask_exporter import PrometheusMetrics
 from prometheus_client import CollectorRegistry
 from flask import request, abort
 
-class AppFactoryTest(BaseTestCase):
+class AppFactoryTest(unittest.TestCase):
 
-    def metrics_init(self, **kwargs):
-        registry = kwargs.pop('registry', CollectorRegistry(auto_describe=True))
-        metrics = PrometheusMetrics(registry=registry, **kwargs)
-        metrics.init_app(self.app)
+    def __init__(self, *args, **kwargs):
+        super(AppFactoryTest, self).__init__(*args, **kwargs)
+        if sys.version_info.major < 3:
+            self.assertRegex = self.assertRegexpMatches
+            self.assertNotRegex = self.assertNotRegexpMatches
 
-        return metrics
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.testing = True
+        self.client = self.app.test_client()
+
+        registry = CollectorRegistry(auto_describe=True)
+        self.metrics = PrometheusMetrics(registry=registry)
+        self.metrics.init_app(self.app)
 
     def test_restricted(self):
-        self.metrics_init()
 
         @self.app.route('/test')
         def test():
