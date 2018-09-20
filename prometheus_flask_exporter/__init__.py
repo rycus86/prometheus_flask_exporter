@@ -66,7 +66,7 @@ class PrometheusMetrics(object):
         - Without an argument, possibly to use with the Flask `request` object
     """
 
-    def __init__(self, app=None, path='/metrics',
+    def __init__(self, app, path='/metrics',
                  export_defaults=True, group_by_endpoint=False,
                  buckets=None, registry=DEFAULT_REGISTRY):
         """
@@ -82,6 +82,8 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param registry: the Prometheus Registry to use
         """
+
+        self.app = app
         self.path = path
         self._export_defaults = export_defaults
         self.group_by_endpoint = group_by_endpoint
@@ -93,15 +95,18 @@ class PrometheusMetrics(object):
             self.init_app(app)
 
     def init_app(self, app):
-        """This callback can be used to initialize an application for the
+        """
+        This callback can be used to initialize an application for the
         use with this prometheus reporter setup.
 
         This is usually used with a flask "app factory" configuration. Please
         see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
 
+        Note, that you need to use `PrometheusMetrics(app=None, ...)`
+        for this mode, otherwise it is called automatically.
+
         :param app: the Flask application
         """
-        self.app = app
 
         if self.path:
             self.register_endpoint(self.path, app)
@@ -458,4 +463,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.2.3'
+__version__ = '0.3.0'
