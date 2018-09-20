@@ -58,13 +58,13 @@ def echo_status(status):
 The following metrics are exported by default
 (unless the `export_defaults` is set to `False`).
 
-- `flask_http_request_duration_seconds` (Histogram)  
-  Labels: `method`, `path` and `status`.  
+- `flask_http_request_duration_seconds` (Histogram)
+  Labels: `method`, `path` and `status`.
   Flask HTTP request duration in seconds for all Flask requests.
-- `flask_http_request_total` (Counter)  
+- `flask_http_request_total` (Counter)
   Labels: `method` and `status`.
   Total number of HTTP requests for all Flask requests.
-- `flask_exporter_info` (Gauge)  
+- `flask_exporter_info` (Gauge)
   Information about the Prometheus Flask exporter itself (e.g. `version`).
 
 ## Configuration
@@ -118,6 +118,10 @@ See some simple examples visualized on a Grafana dashboard by running
 the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/wsgi) folder.
 
 ![Example dashboard](examples/sample-signals/dashboard.png)
+
+## App Factory Pattern
+
+This library also supports the flask [app factory pattern](http://flask.pocoo.org/docs/1.0/patterns/appfactories/). Use the `init_app` method to attach the library to one or more application objects.
 
 ## Debug mode
 
