@@ -40,6 +40,6 @@ class AppFactoryTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         self.assertIn('flask_http_request_duration_seconds_bucket{le="0.1",method="GET",path="/test",status="200"} 1.0',
-                      response.data)
+                      str(response.data))
         self.assertIn('flask_http_request_duration_seconds_count{method="GET",path="/test",status="200"} 1.0',
-                      response.data)
+                      str(response.data))
