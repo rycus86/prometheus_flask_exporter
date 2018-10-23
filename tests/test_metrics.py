@@ -126,11 +126,11 @@ class MetricsTest(BaseTestCase):
             return 'OK'
 
         self.client.get('/test/1')
-        self.assertMetric('cnt_1', '1.0')
+        self.assertMetric('cnt_1_total', '1.0')
         self.client.get('/test/1')
-        self.assertMetric('cnt_1', '2.0')
+        self.assertMetric('cnt_1_total', '2.0')
         self.client.get('/test/1')
-        self.assertMetric('cnt_1', '3.0')
+        self.assertMetric('cnt_1_total', '3.0')
 
         @self.app.route('/test/2')
         @metrics.counter('cnt_2', 'Counter 2', labels={
@@ -143,6 +143,6 @@ class MetricsTest(BaseTestCase):
         self.client.get('/test/2')
 
         self.assertMetric(
-            'cnt_2', '1.0',
+            'cnt_2_total', '1.0',
             ('uri', '/test/2'), ('code', 200)
         )

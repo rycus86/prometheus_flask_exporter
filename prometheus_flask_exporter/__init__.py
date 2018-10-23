@@ -67,8 +67,9 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics',
-                 export_defaults=True, group_by_endpoint=False,
-                 buckets=None, registry=DEFAULT_REGISTRY):
+                 export_defaults=True, defaults_prefix='flask',
+                 group_by_endpoint=False, buckets=None,
+                 registry=DEFAULT_REGISTRY):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -76,6 +77,9 @@ class PrometheusMetrics(object):
         :param path: the metrics path (defaults to `/metrics`)
         :param export_defaults: expose all HTTP request latencies
             and number of HTTP requests
+        :param defaults_prefix: string to prefix the default exported
+            metrics name with (when either `export_defaults=True` or
+            `export_defaults(..)` is called)
         :param group_by_endpoint: group default HTTP metrics
             by the endpoints' function name instead of the URI path
         :param buckets: the time buckets for request latencies
@@ -86,6 +90,7 @@ class PrometheusMetrics(object):
         self.app = app
         self.path = path
         self._export_defaults = export_defaults
+        self._defaults_prefix = defaults_prefix or 'flask'
         self.group_by_endpoint = group_by_endpoint
         self.buckets = buckets
         self.registry = registry
@@ -112,7 +117,10 @@ class PrometheusMetrics(object):
             self.register_endpoint(self.path, app)
 
         if self._export_defaults:
-            self.export_defaults(self.buckets, self.group_by_endpoint, app)
+            self.export_defaults(
+                self.buckets, self.group_by_endpoint,
+                self._defaults_prefix, app
+            )
 
     def register_endpoint(self, path, app=None):
         """
@@ -171,7 +179,8 @@ class PrometheusMetrics(object):
         thread.setDaemon(True)
         thread.start()
 
-    def export_defaults(self, buckets=None, group_by_endpoint=False, app=None):
+    def export_defaults(self, buckets=None, group_by_endpoint=False,
+                        prefix='flask', app=None):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -181,10 +190,15 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param group_by_endpoint: group default HTTP metrics
             by the endpoints' function name instead of the URI path
+        :param prefix: prefix to start the default metrics names with
+        :param app: the Flask application
         """
 
         if app is None:
             app = self.app or current_app
+
+        if not prefix:
+            prefix = self._defaults_prefix or 'flask'
 
         # use the default buckets from prometheus_client if not given here
         buckets_as_kwargs = {}
@@ -194,7 +208,7 @@ class PrometheusMetrics(object):
         duration_group = 'endpoint' if group_by_endpoint else 'path'
 
         histogram = Histogram(
-            'flask_http_request_duration_seconds',
+            '%s_http_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
             ('method', duration_group, 'status'),
             registry=self.registry,
@@ -202,14 +216,14 @@ class PrometheusMetrics(object):
         )
 
         counter = Counter(
-            'flask_http_request_total',
+            '%s_http_request_total' % prefix,
             'Total number of HTTP requests',
             ('method', 'status'),
             registry=self.registry
         )
 
         self.info(
-            'flask_exporter_info',
+            '%s_exporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
             version=self.version
         )
@@ -404,7 +418,9 @@ class PrometheusMetrics(object):
             def func(*args, **kwargs):
                 request.prom_do_not_track = True
                 return f(*args, **kwargs)
+
             return func
+
         return decorator
 
     def info(self, name, description, labelnames=None, labelvalues=None, **labels):
@@ -463,4 +479,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'

@@ -86,7 +86,7 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
-        self.assertMetric('success_invocation', '2.0')
+        self.assertMetric('success_invocation_total', '2.0')
 
     def test_skip(self):
         metrics = self.metrics()
@@ -146,6 +146,86 @@ class DefaultsTest(BaseTestCase):
             'flask_http_request_duration_seconds_count',
             ('method', 'GET'), ('path', '/test'), ('status', 200),
             endpoint='/metrics'
+        )
+
+    def test_custom_defaults_prefix(self):
+        metrics = self.metrics(defaults_prefix='www')
+
+        self.assertAbsent(
+            'flask_exporter_info',
+            ('version', metrics.version)
+        )
+        self.assertMetric(
+            'www_exporter_info', '1.0',
+            ('version', metrics.version)
+        )
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'www_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'www_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
+    def test_late_defaults_export(self):
+        metrics = self.metrics(export_defaults=False)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertAbsent(
+            'flask_exporter_info',
+            ('version', metrics.version)
+        )
+        self.assertAbsent(
+            'late_exporter_info',
+            ('version', metrics.version)
+        )
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertAbsent(
+            'late_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+
+        metrics.export_defaults(prefix='late')
+
+        self.assertMetric(
+            'late_exporter_info', '1.0',
+            ('version', metrics.version)
+        )
+
+        self.client.get('/test')
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'late_http_request_total', '3.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'late_http_request_duration_seconds_count', '3.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
     def test_group_by_endpoint(self):

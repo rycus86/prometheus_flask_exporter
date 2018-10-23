@@ -67,6 +67,8 @@ The following metrics are exported by default
 - `flask_exporter_info` (Gauge)
   Information about the Prometheus Flask exporter itself (e.g. `version`).
 
+The prefix for the default metrics can be controlled by the `defaults_prefix` parameter.
+
 ## Configuration
 
 By default, the metrics are exposed on the same Flask application on the
