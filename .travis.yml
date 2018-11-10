@@ -1,10 +1,11 @@
 language: python
 python:
-- '2.7'
-- '3.3'
-- '3.4'
-- '3.5'
+- '3.7'
 - '3.6'
+- '3.5'
+- '3.4'
+- '3.3'
+- '2.7'
 
 install: skip
 script:
@@ -28,12 +29,9 @@ script:
 jobs:
   include:
   - stage: deploy
-    sudo: true
     script: skip
     before_deploy:
-      - sudo apt-get -qq update
-      - sudo apt-get install -y pandoc
-      - pandoc --from=markdown --to=rst --output=README.rst README.md
+      - pip install setuptools wheel twine
     deploy:
       provider: pypi
       user: rycus86
