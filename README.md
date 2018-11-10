@@ -117,7 +117,7 @@ info.set(42.1)
 ## Examples
 
 See some simple examples visualized on a Grafana dashboard by running
-the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/wsgi) folder.
+the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/sample-signals) folder.
 
 ![Example dashboard](examples/sample-signals/dashboard.png)
 
