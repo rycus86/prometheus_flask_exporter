@@ -235,12 +235,13 @@ class PrometheusMetrics(object):
             if hasattr(request, 'prom_do_not_track'):
                 return response
 
-            total_time = max(default_timer() - request.prom_start_time, 0)
-            histogram.labels(
-                request.method,
-                getattr(request, duration_group),
-                response.status_code
-            ).observe(total_time)
+            if hasattr(request, 'prom_start_time'):
+                total_time = max(default_timer() - request.prom_start_time, 0)
+                histogram.labels(
+                    request.method,
+                    getattr(request, duration_group),
+                    response.status_code
+                ).observe(total_time)
 
             counter.labels(request.method, response.status_code).inc()
 
@@ -479,4 +480,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'

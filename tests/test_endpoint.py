@@ -129,3 +129,21 @@ class EndpointTest(BaseTestCase):
 
         self.assertMetric('http_with_exception_count', 1.0, ('status', 500))
         self.assertMetric('http_with_exception_sum', '.', ('status', 500))
+
+    def test_abort_before(self):
+        @self.app.before_request
+        def before_request():
+            if request.path == '/metrics':
+                return
+
+            raise abort(400)
+
+        self.metrics()
+
+        self.client.get('/abort/before')
+        self.client.get('/abort/before')
+
+        self.assertMetric(
+            'flask_http_request_total', 2.0,
+            ('method', 'GET'), ('status', 400)
+        )
