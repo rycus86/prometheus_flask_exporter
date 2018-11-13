@@ -75,9 +75,31 @@ By default, the metrics are exposed on the same Flask application on the
 `/metrics` endpoint and using the core Prometheus registry.
 If this doesn't suit your needs, set the `path` argument to `None` and/or
 the `export_defaults` argument to `False` plus change the `registry`
-argument if needed. The `group_by_endpoint` constructor flag makes
-the default request duration metric tracked by endpoint (function)
-instead of URI path.
+argument if needed.
+
+The `group_by` constructor argument controls what
+the default request duration metric is tracked by: endpoint (function)
+instead of URI path (the default). This parameter also accepts a function
+to extract the value from the request, or a name of a property of the request object.
+Examples:
+
+```python
+PrometheusMetrics(app, group_by='path')         # the default
+PrometheusMetrics(app, group_by='endpoint')     # by endpoint
+PrometheusMetrics(app, group_by='url_rule')     # by URL rule
+
+def custom_rule(req):  # the Flask request object
+    """ The name of the function becomes the label name. """
+    return '%s::%s' % (req.method, req.path)
+
+PrometheusMetrics(app, group_by=custom_rule)    # by a function
+
+# Error: this is not supported:
+PrometheusMetrics(app, group_by=lambda r: r.path)
+```
+
+> The `group_by_endpoint` argument is deprecated since 0.4.0,
+> please use the new `group_by` argument.
 
 The `register_endpoint` allows exposing the metrics endpoint on a specific path.
 It also allows passing in a Flask application to register it on but defaults

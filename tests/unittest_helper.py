@@ -29,7 +29,10 @@ class BaseTestCase(unittest.TestCase):
                 name, ','.join(
                     '(?:%s)="(?:%s)"' % (
                         '|'.join(str(item) for item, _ in labels),
-                        '|'.join(str(item).replace('+', r'\+') for _, item in labels)
+                        '|'.join(
+                            str(item).replace('+', r'\+').replace('?', r'\?')
+                            for _, item in labels
+                        )
                     ) for _ in labels
                 ), value
             )
@@ -38,7 +41,10 @@ class BaseTestCase(unittest.TestCase):
 
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
-        self.assertRegex(str(response.data), pattern)
+        self.assertRegex(
+            str(response.data), pattern,
+            msg='Failing metric: %s%s, Regexp didn\'t match' % (name, dict(labels))
+        )
 
         if not labels:
             return

@@ -1,5 +1,6 @@
 import os
 import inspect
+import warnings
 import functools
 import threading
 from timeit import default_timer
@@ -68,8 +69,8 @@ class PrometheusMetrics(object):
 
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
-                 group_by_endpoint=False, buckets=None,
-                 registry=DEFAULT_REGISTRY):
+                 group_by='path', buckets=None,
+                 registry=DEFAULT_REGISTRY, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -80,8 +81,9 @@ class PrometheusMetrics(object):
         :param defaults_prefix: string to prefix the default exported
             metrics name with (when either `export_defaults=True` or
             `export_defaults(..)` is called)
-        :param group_by_endpoint: group default HTTP metrics
-            by the endpoints' function name instead of the URI path
+        :param group_by: group default HTTP metrics by
+            this request property, like `path`, `endpoint`, `url_rule`, etc.
+            (defaults to `path`)
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
         :param registry: the Prometheus Registry to use
@@ -91,10 +93,24 @@ class PrometheusMetrics(object):
         self.path = path
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
-        self.group_by_endpoint = group_by_endpoint
         self.buckets = buckets
         self.registry = registry
         self.version = __version__
+
+        if kwargs.get('group_by_endpoint') is True:
+            warnings.warn(
+                'The `group_by_endpoint` argument of `PrometheusMetrics` is '
+                'deprecated since 0.4.0, please use the '
+                'new `group_by` argument.', DeprecationWarning
+            )
+
+            self.group_by = 'endpoint'
+
+        elif group_by:
+            self.group_by = group_by
+
+        else:
+            self.group_by = 'path'
 
         if app is not None:
             self.init_app(app)
@@ -118,7 +134,7 @@ class PrometheusMetrics(object):
 
         if self._export_defaults:
             self.export_defaults(
-                self.buckets, self.group_by_endpoint,
+                self.buckets, self.group_by,
                 self._defaults_prefix, app
             )
 
@@ -179,8 +195,8 @@ class PrometheusMetrics(object):
         thread.setDaemon(True)
         thread.start()
 
-    def export_defaults(self, buckets=None, group_by_endpoint=False,
-                        prefix='flask', app=None):
+    def export_defaults(self, buckets=None, group_by='path',
+                        prefix='flask', app=None, **kwargs):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -188,8 +204,9 @@ class PrometheusMetrics(object):
 
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
-        :param group_by_endpoint: group default HTTP metrics
-            by the endpoints' function name instead of the URI path
+        :param group_by: group default HTTP metrics by
+            this request property, like `path`, `endpoint`, `rule`, etc.
+            (defaults to `path`)
         :param prefix: prefix to start the default metrics names with
         :param app: the Flask application
         """
@@ -205,12 +222,31 @@ class PrometheusMetrics(object):
         if buckets is not None:
             buckets_as_kwargs['buckets'] = buckets
 
-        duration_group = 'endpoint' if group_by_endpoint else 'path'
+        if kwargs.get('group_by_endpoint') is True:
+            warnings.warn(
+                'The `group_by_endpoint` argument of '
+                '`PrometheusMetrics.export_defaults` is deprecated since 0.4.0, '
+                'please use the new `group_by` argument.', DeprecationWarning
+            )
+
+            duration_group = 'endpoint'
+
+        elif group_by:
+            duration_group = group_by
+
+        else:
+            duration_group = 'path'
+
+        if callable(duration_group):
+            duration_group_name = duration_group.__name__
+
+        else:
+            duration_group_name = duration_group
 
         histogram = Histogram(
             '%s_http_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
-            ('method', duration_group, 'status'),
+            ('method', duration_group_name, 'status'),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -237,10 +273,14 @@ class PrometheusMetrics(object):
 
             if hasattr(request, 'prom_start_time'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
+
+                if callable(duration_group):
+                    group = duration_group(request)
+                else:
+                    group = getattr(request, duration_group)
+
                 histogram.labels(
-                    request.method,
-                    getattr(request, duration_group),
-                    response.status_code
+                    request.method, group, response.status_code
                 ).observe(total_time)
 
             counter.labels(request.method, response.status_code).inc()
@@ -480,4 +520,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.3.4'
+__version__ = '0.4.0'
