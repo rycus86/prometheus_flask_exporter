@@ -508,7 +508,7 @@ class PrometheusMetrics(object):
                 labels[label_name] = labelvalues[idx]
 
         gauge = Gauge(
-            name, description, labelnames,
+            name, description, labelnames or tuple(),
             registry=self.registry
         )
 
@@ -520,4 +520,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
