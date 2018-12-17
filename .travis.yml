@@ -1,9 +1,10 @@
 language: python
+dist: xenial
 python:
+- '3.7'
 - '3.6'
 - '3.5'
 - '3.4'
-- '3.3'
 - '2.7'
 
 install: skip
@@ -27,6 +28,19 @@ script:
 
 jobs:
   include:
+  - stage: wsgi
+    sudo: true
+    script:
+      - sh examples/gunicorn/run_tests.sh
+  - stage: wsgi
+    sudo: true
+    script:
+      - sh examples/uwsgi/run_tests.sh
+  - stage: wsgi
+    sudo: true
+    script:
+      - sh examples/wsgi/run_tests.sh
+
   - stage: deploy
     script: skip
     before_deploy:

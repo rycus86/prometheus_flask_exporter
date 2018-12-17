@@ -1,11 +1,13 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 _fail() {
     docker rm -f wsgi-sample > /dev/null 2>&1
     exit 1
 }
 
-docker build -t wsgi-sample . > /dev/null || _fail
+docker build -f Dockerfile -t wsgi-sample ../../. > /dev/null || _fail
 docker run -d --name wsgi-sample -p 8889:80 wsgi-sample > /dev/null || _fail
 
 echo 'Starting the tests...'

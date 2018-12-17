@@ -1,17 +1,11 @@
 import os
 
-from prometheus_client import multiprocess, CollectorRegistry
-from prometheus_client import start_wsgi_server
-
-registry = CollectorRegistry()
-multiprocess.MultiProcessCollector(registry)
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
 
 
 def when_ready(server):
-    start_wsgi_server(int(os.getenv('METRICS_PORT')), registry=registry)
-    # or alternatively:
-    #   start_http_server(int(os.getenv('METRICS_PORT')), registry=registry)
+    GunicornPrometheusMetrics.start_http_server_when_ready(int(os.getenv('METRICS_PORT')))
 
 
 def child_exit(server, worker):
-    multiprocess.mark_process_dead(worker.pid)
+    GunicornPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)

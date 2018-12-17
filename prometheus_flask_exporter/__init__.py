@@ -12,7 +12,6 @@ from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
-from prometheus_client import multiprocess, CollectorRegistry
 
 
 class PrometheusMetrics(object):
@@ -156,6 +155,9 @@ class PrometheusMetrics(object):
         @app.route(path)
         @self.do_not_track()
         def prometheus_metrics():
+            # import these here so they don't clash with our own multiprocess module
+            from prometheus_client import multiprocess, CollectorRegistry
+
             if 'prometheus_multiproc_dir' in os.environ:
                 registry = CollectorRegistry()
             else:
@@ -520,4 +522,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.4.1'
+__version__ = '0.5.0'

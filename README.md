@@ -166,6 +166,50 @@ Getting accurate metrics for WSGI apps might require a bit more setup.
 See a working sample app in the `examples` folder, and also the
 [prometheus_flask_exporter#5](https://github.com/rycus86/prometheus_flask_exporter/issues/5) issue.
 
+### Multiprocess applications
+
+For multiprocess applications (WSGI or otherwise), you can find some
+helper classes in the `prometheus_flask_exporter.multiprocess` module.
+These provide convenience wrappers for exposing metrics in an
+environment where multiple copies of the application will run on a single host.
+
+```python
+# an extension targeted at Gunicorn deployments
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+
+app = Flask(__name__)
+metrics = GunicornPrometheusMetrics(app)
+
+# then in the Gunicorn config file:
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+
+def when_ready(server):
+    GunicornPrometheusMetrics.start_http_server_when_ready(8080)
+
+def child_exit(server, worker):
+    GunicornPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)
+```
+
+There's a small wrapper available for [Gunicorn](https://gunicorn.org/) and
+[uWSGI](https://uwsgi-docs.readthedocs.io/en/latest/index.html), for everything
+else you can extend the `prometheus_flask_exporter.multiprocess.MultiprocessPrometheusMetrics` class
+and implement the `should_start_http_server` method at least.
+
+```python
+from prometheus_flask_exporter.multiprocess import MultiprocessPrometheusMetrics
+
+class MyMultiprocessMetrics(MultiprocessPrometheusMetrics):
+    def should_start_http_server(self):
+        return this_worker() == primary_worker()
+```
+
+This should return `True` on one process only, and the underlying
+[Prometheus client library](https://github.com/prometheus/client_python)
+will collect the metrics for all the forked children or siblings.
+
+__Note:__ this needs the `prometheus_multiproc_dir` environment variable
+to point to a valid, writable directory.
+
 ## License
 
 MIT

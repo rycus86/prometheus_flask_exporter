@@ -1,11 +1,13 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 _fail() {
     docker rm -f gunicorn-sample > /dev/null 2>&1
     exit 1
 }
 
-docker build -t gunicorn-sample . > /dev/null || _fail
+docker build -f Dockerfile -t gunicorn-sample ../../. > /dev/null || _fail
 docker run -d --name gunicorn-sample -p 4000:4000 -p 9200:9200 gunicorn-sample > /dev/null || _fail
 
 echo 'Waiting for Gunicorn to start...'

@@ -1,14 +1,9 @@
 from flask import Flask
-from prometheus_client import multiprocess, CollectorRegistry
 
-from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
 
 app = Flask(__name__)
-
-registry = CollectorRegistry()
-multiprocess.MultiProcessCollector(registry)
-
-metrics = PrometheusMetrics(app, path=None, registry=registry)
+metrics = GunicornPrometheusMetrics(app)
 
 
 @app.route('/test')
