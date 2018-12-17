@@ -210,6 +210,16 @@ will collect the metrics for all the forked children or siblings.
 __Note:__ this needs the `prometheus_multiproc_dir` environment variable
 to point to a valid, writable directory.
 
+You'll also have to call the `metrics.start_http_server()` function
+explicitly somewhere, and the `should_start_http_server` takes care of
+only starting it once.
+The [examples](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples) folder
+has some working examples on this.
+
+A final caveat is that the metrics HTTP server will listen on __any__ paths
+on the given HTTP port, not only on `/metrics`, and it is not implemented
+at the moment to be able to change this.
+
 ## License
 
 MIT
