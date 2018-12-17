@@ -17,5 +17,12 @@ def test():
     return 'OK'
 
 
+@app.route('/ping')
+@metrics.do_not_track()
+def ping():
+    return 'pong'
+
+
+
 if __name__ == '__main__':
     app.run()

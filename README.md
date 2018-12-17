@@ -160,11 +160,12 @@ app with `debug=True`, are not going to be reflected in the metrics.
 See [https://github.com/rycus86/prometheus_flask_exporter/issues/4](https://github.com/rycus86/prometheus_flask_exporter/issues/4)
 for more details.
 
-Alternatively - since version 0.5.1 -, if you set the `DEBUG_METRICS`
+Alternatively - since version `0.5.1` - if you set the `DEBUG_METRICS`
 environment variable, you will get metrics for the latest reloaded code.
-These will be exported on the main Flask app, serving the metrics on
-a different port is not going to work most probably - e.g.
-`PrometheusMetrics.start_http_server(..)` is not expected to work.
+These will be exported on the main Flask app.
+Serving the metrics on a different port is not going to work
+most probably - e.g. `PrometheusMetrics.start_http_server(..)` is not
+expected to work.
 
 ## WSGI
 

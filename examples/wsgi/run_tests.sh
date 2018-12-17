@@ -10,6 +10,16 @@ _fail() {
 docker build -f Dockerfile -t wsgi-sample ../../. > /dev/null || _fail
 docker run -d --name wsgi-sample -p 8889:80 wsgi-sample > /dev/null || _fail
 
+echo 'Waiting for the server to start...'
+
+for _ in $(seq 1 10); do
+    if curl -fs http://localhost:8889/ping > /dev/null; then
+        break
+    else
+        sleep 0.2
+    fi
+done
+
 echo 'Starting the tests...'
 
 for _ in $(seq 1 10); do

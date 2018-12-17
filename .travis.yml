@@ -28,22 +28,21 @@ script:
 
 jobs:
   include:
-  - stage: integration
+  - &integration-stage
+    stage: integration
     sudo: true
     script:
-      - sh examples/gunicorn/run_tests.sh
-  - stage: integration
-    sudo: true
-    script:
-      - sh examples/uwsgi/run_tests.sh
-  - stage: integration
-    sudo: true
-    script:
-      - sh examples/wsgi/run_tests.sh
-  - stage: integration
-    sudo: true
-    script:
-      - sh examples/reload/run_tests.sh
+      - sh examples/${TEST_NAME}/run_tests.sh
+    env: TEST_NAME=gunicorn
+
+  - <<: *integration-stage
+    env: TEST_NAME=uwsgi
+
+  - <<: *integration-stage
+    env: TEST_NAME=wsgi
+
+  - <<: *integration-stage
+    env: TEST_NAME=reload
 
   - stage: deploy
     script: skip
