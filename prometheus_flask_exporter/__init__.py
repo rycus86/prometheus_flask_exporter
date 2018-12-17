@@ -146,7 +146,7 @@ class PrometheusMetrics(object):
             (by default it is the application registered with this class)
         """
 
-        if is_running_from_reloader():
+        if is_running_from_reloader() and not os.environ.get('DEBUG_METRICS'):
             return
 
         if app is None:
@@ -522,4 +522,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
