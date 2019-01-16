@@ -223,6 +223,11 @@ only starting it once.
 The [examples](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples) folder
 has some working examples on this.
 
+Please also note, that the Prometheus client library does not collect process level
+metrics, like memory, CPU and Python GC stats when multiprocessing is enabled.
+See the [prometheus_flask_exporter#18](https://github.com/rycus86/prometheus_flask_exporter/issues/18)
+issue for some more context and details.
+
 A final caveat is that the metrics HTTP server will listen on __any__ paths
 on the given HTTP port, not only on `/metrics`, and it is not implemented
 at the moment to be able to change this.
