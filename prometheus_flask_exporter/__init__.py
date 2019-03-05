@@ -246,7 +246,7 @@ class PrometheusMetrics(object):
             duration_group_name = duration_group
 
         histogram = Histogram(
-            '%s_http_request_duration_seconds' % prefix,
+            '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
             ('method', duration_group_name, 'status'),
             registry=self.registry,
@@ -254,14 +254,14 @@ class PrometheusMetrics(object):
         )
 
         counter = Counter(
-            '%s_http_request_total' % prefix,
+            '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
             ('method', 'status'),
             registry=self.registry
         )
 
         self.info(
-            '%s_exporter_info' % prefix,
+            '%sexporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
             version=self.version
         )
