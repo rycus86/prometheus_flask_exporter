@@ -67,7 +67,7 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics',
-                 export_defaults=True, defaults_prefix='flask',
+                 export_defaults=True, defaults_prefix='flask_',
                  group_by='path', buckets=None,
                  registry=DEFAULT_REGISTRY, **kwargs):
         """
@@ -91,7 +91,7 @@ class PrometheusMetrics(object):
         self.app = app
         self.path = path
         self._export_defaults = export_defaults
-        self._defaults_prefix = defaults_prefix or 'flask'
+        self._defaults_prefix = defaults_prefix
         self.buckets = buckets
         self.registry = registry
         self.version = __version__
@@ -198,7 +198,7 @@ class PrometheusMetrics(object):
         thread.start()
 
     def export_defaults(self, buckets=None, group_by='path',
-                        prefix='flask', app=None, **kwargs):
+                        prefix='flask_', app=None, **kwargs):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -216,8 +216,8 @@ class PrometheusMetrics(object):
         if app is None:
             app = self.app or current_app
 
-        if not prefix:
-            prefix = self._defaults_prefix or 'flask'
+        if prefix is None:
+            prefix = self._defaults_prefix if self._defaults_prefix is None else 'flask_'
 
         # use the default buckets from prometheus_client if not given here
         buckets_as_kwargs = {}
