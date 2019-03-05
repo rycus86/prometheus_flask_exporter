@@ -41,7 +41,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
     __metaclass__ = ABCMeta
 
     def __init__(self, app=None, export_defaults=True,
-                 defaults_prefix='flask', group_by='path',
+                 defaults_prefix='flask_', group_by='path',
                  buckets=None, registry=None):
         """
         Create a new multiprocess-aware Prometheus metrics export configuration.
