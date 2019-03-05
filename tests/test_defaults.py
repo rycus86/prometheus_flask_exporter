@@ -149,7 +149,7 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_custom_defaults_prefix(self):
-        metrics = self.metrics(defaults_prefix='www')
+        metrics = self.metrics(defaults_prefix='www_')
 
         self.assertAbsent(
             'flask_exporter_info',
@@ -208,7 +208,7 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('status', 200)
         )
 
-        metrics.export_defaults(prefix='late')
+        metrics.export_defaults(prefix='late_')
 
         self.assertMetric(
             'late_exporter_info', '1.0',
