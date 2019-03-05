@@ -13,6 +13,11 @@ from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
 
+# Constant indicating that default metrics should not have any prefix applied
+# It purposely uses invalid characters defined for metrics names as specified in Prometheus
+# documentation (see: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+NO_PREFIX = '#no_prefix'
+
 
 class PrometheusMetrics(object):
     """
@@ -67,7 +72,7 @@ class PrometheusMetrics(object):
     """
 
     def __init__(self, app, path='/metrics',
-                 export_defaults=True, defaults_prefix='flask_',
+                 export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None,
                  registry=DEFAULT_REGISTRY, **kwargs):
         """
@@ -79,7 +84,8 @@ class PrometheusMetrics(object):
             and number of HTTP requests
         :param defaults_prefix: string to prefix the default exported
             metrics name with (when either `export_defaults=True` or
-            `export_defaults(..)` is called)
+            `export_defaults(..)` is called) in case when you wan't no
+            prefix use NO_PREFIX constant
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `url_rule`, etc.
             (defaults to `path`)
@@ -91,7 +97,7 @@ class PrometheusMetrics(object):
         self.app = app
         self.path = path
         self._export_defaults = export_defaults
-        self._defaults_prefix = defaults_prefix
+        self._defaults_prefix = defaults_prefix or 'flask'
         self.buckets = buckets
         self.registry = registry
         self.version = __version__
@@ -198,7 +204,7 @@ class PrometheusMetrics(object):
         thread.start()
 
     def export_defaults(self, buckets=None, group_by='path',
-                        prefix='flask_', app=None, **kwargs):
+                        prefix='flask', app=None, **kwargs):
         """
         Export the default metrics:
             - HTTP request latencies
@@ -209,15 +215,15 @@ class PrometheusMetrics(object):
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `rule`, etc.
             (defaults to `path`)
-        :param prefix: prefix to start the default metrics names with
+        :param prefix: prefix to start the default metrics names with or NO_PREFIX (to skip prefix)
         :param app: the Flask application
         """
 
         if app is None:
             app = self.app or current_app
 
-        if prefix is None:
-            prefix = self._defaults_prefix if self._defaults_prefix is None else 'flask_'
+        if not prefix:
+            prefix = self._defaults_prefix or 'flask'
 
         # use the default buckets from prometheus_client if not given here
         buckets_as_kwargs = {}
@@ -244,6 +250,11 @@ class PrometheusMetrics(object):
 
         else:
             duration_group_name = duration_group
+
+        if prefix == NO_PREFIX:
+            prefix = ""
+        else:
+            prefix = prefix + "_"
 
         histogram = Histogram(
             '%shttp_request_duration_seconds' % prefix,
