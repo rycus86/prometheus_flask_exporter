@@ -1,5 +1,6 @@
 from unittest_helper import BaseTestCase
 
+from prometheus_flask_exporter import NO_PREFIX
 from flask import make_response
 
 
@@ -177,6 +178,39 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertMetric(
             'www_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
+    def test_no_defaults_prefix(self):
+        metrics = self.metrics(defaults_prefix=NO_PREFIX)
+
+        self.assertAbsent(
+            'flask_exporter_info',
+            ('version', metrics.version)
+        )
+        self.assertMetric(
+            'exporter_info', '1.0',
+            ('version', metrics.version)
+        )
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'http_request_total', '3.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'http_request_duration_seconds_count', '3.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 

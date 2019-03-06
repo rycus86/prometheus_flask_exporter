@@ -13,6 +13,11 @@ from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
 
+# Constant indicating that default metrics should not have any prefix applied
+# It purposely uses invalid characters defined for metrics names as specified in Prometheus
+# documentation (see: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+NO_PREFIX = '#no_prefix'
+
 
 class PrometheusMetrics(object):
     """
@@ -79,7 +84,8 @@ class PrometheusMetrics(object):
             and number of HTTP requests
         :param defaults_prefix: string to prefix the default exported
             metrics name with (when either `export_defaults=True` or
-            `export_defaults(..)` is called)
+            `export_defaults(..)` is called) in case when you wan't no
+            prefix use NO_PREFIX constant
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `url_rule`, etc.
             (defaults to `path`)
@@ -209,7 +215,7 @@ class PrometheusMetrics(object):
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `rule`, etc.
             (defaults to `path`)
-        :param prefix: prefix to start the default metrics names with
+        :param prefix: prefix to start the default metrics names with or NO_PREFIX (to skip prefix)
         :param app: the Flask application
         """
 
@@ -245,8 +251,13 @@ class PrometheusMetrics(object):
         else:
             duration_group_name = duration_group
 
+        if prefix == NO_PREFIX:
+            prefix = ""
+        else:
+            prefix = prefix + "_"
+
         histogram = Histogram(
-            '%s_http_request_duration_seconds' % prefix,
+            '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
             ('method', duration_group_name, 'status'),
             registry=self.registry,
@@ -254,14 +265,14 @@ class PrometheusMetrics(object):
         )
 
         counter = Counter(
-            '%s_http_request_total' % prefix,
+            '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
             ('method', 'status'),
             registry=self.registry
         )
 
         self.info(
-            '%s_exporter_info' % prefix,
+            '%sexporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
             version=self.version
         )
