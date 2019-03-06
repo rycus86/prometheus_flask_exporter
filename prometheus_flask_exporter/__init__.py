@@ -13,10 +13,13 @@ from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from prometheus_client import REGISTRY as DEFAULT_REGISTRY
 
-# Constant indicating that default metrics should not have any prefix applied
-# It purposely uses invalid characters defined for metrics names as specified in Prometheus
-# documentation (see: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+
 NO_PREFIX = '#no_prefix'
+"""
+Constant indicating that default metrics should not have any prefix applied.
+It purposely uses invalid characters defined for metrics names as specified in Prometheus
+documentation (see: https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels)
+"""
 
 
 class PrometheusMetrics(object):
@@ -84,8 +87,8 @@ class PrometheusMetrics(object):
             and number of HTTP requests
         :param defaults_prefix: string to prefix the default exported
             metrics name with (when either `export_defaults=True` or
-            `export_defaults(..)` is called) in case when you wan't no
-            prefix use NO_PREFIX constant
+            `export_defaults(..)` is called) or in case you don't want
+            any prefix then use `NO_PREFIX` constant
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `url_rule`, etc.
             (defaults to `path`)
@@ -215,7 +218,8 @@ class PrometheusMetrics(object):
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `rule`, etc.
             (defaults to `path`)
-        :param prefix: prefix to start the default metrics names with or NO_PREFIX (to skip prefix)
+        :param prefix: prefix to start the default metrics names with
+            or `NO_PREFIX` (to skip prefix)
         :param app: the Flask application
         """
 
@@ -533,4 +537,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.5.1'
+__version__ = '0.6.0'
