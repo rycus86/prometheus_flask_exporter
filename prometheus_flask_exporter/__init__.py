@@ -11,7 +11,7 @@ from werkzeug.serving import is_running_from_reloader
 from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from prometheus_client import REGISTRY as DEFAULT_REGISTRY
+import prometheus_client
 
 
 NO_PREFIX = '#no_prefix'
@@ -77,7 +77,7 @@ class PrometheusMetrics(object):
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None,
-                 registry=DEFAULT_REGISTRY, **kwargs):
+                 registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -102,7 +102,7 @@ class PrometheusMetrics(object):
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
         self.buckets = buckets
-        self.registry = registry
+        self.registry = registry or prometheus_client.REGISTRY
         self.version = __version__
 
         if kwargs.get('group_by_endpoint') is True:
