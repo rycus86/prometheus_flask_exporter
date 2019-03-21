@@ -11,7 +11,6 @@ from werkzeug.serving import is_running_from_reloader
 from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-import prometheus_client
 
 
 NO_PREFIX = '#no_prefix'
@@ -102,8 +101,16 @@ class PrometheusMetrics(object):
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
         self.buckets = buckets
-        self.registry = registry or prometheus_client.REGISTRY
         self.version = __version__
+
+        if registry:
+            self.registry = registry
+        else:
+            # load the default registry from the underlying
+            # Prometheus library here for easier unit testing
+            # see https://github.com/rycus86/prometheus_flask_exporter/pull/20
+            from prometheus_client import REGISTRY as DEFAULT_REGISTRY
+            self.registry = DEFAULT_REGISTRY
 
         if kwargs.get('group_by_endpoint') is True:
             warnings.warn(
@@ -537,4 +544,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.6.0'
+__version__ = '0.7.0'

@@ -2,8 +2,9 @@ import re
 import sys
 import unittest
 
+import prometheus_client
 from flask import Flask
-from prometheus_client import CollectorRegistry
+
 from prometheus_flask_exporter import PrometheusMetrics
 
 
@@ -19,9 +20,11 @@ class BaseTestCase(unittest.TestCase):
         self.app.testing = True
         self.client = self.app.test_client()
 
+        # reset the underlying Prometheus registry
+        prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
+
     def metrics(self, **kwargs):
-        registry = kwargs.pop('registry', CollectorRegistry(auto_describe=True))
-        return PrometheusMetrics(self.app, registry=registry, **kwargs)
+        return PrometheusMetrics(self.app, registry=kwargs.pop('registry', None), **kwargs)
 
     def assertMetric(self, name, value, *labels, **kwargs):
         if labels:
