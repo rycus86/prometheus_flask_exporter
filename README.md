@@ -1,8 +1,9 @@
 # Prometheus Flask exporter
 
-[![Travis](https://img.shields.io/travis/rycus86/prometheus_flask_exporter.svg)](https://travis-ci.org/rycus86/prometheus_flask_exporter)
 [![PyPI](https://img.shields.io/pypi/v/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
 [![PyPI](https://img.shields.io/pypi/pyversions/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
+[![Travis](https://img.shields.io/travis/rycus86/prometheus_flask_exporter.svg)](https://travis-ci.org/rycus86/prometheus_flask_exporter)
 [![Coverage Status](https://coveralls.io/repos/github/rycus86/prometheus_flask_exporter/badge.svg?branch=master)](https://coveralls.io/github/rycus86/prometheus_flask_exporter?branch=master)
 [![Code Climate](https://codeclimate.com/github/rycus86/prometheus_flask_exporter/badges/gpa.svg)](https://codeclimate.com/github/rycus86/prometheus_flask_exporter)
 
@@ -142,7 +143,7 @@ info.set(42.1)
 See some simple examples visualized on a Grafana dashboard by running
 the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/sample-signals) folder.
 
-![Example dashboard](examples/sample-signals/dashboard.png)
+![Example dashboard](https://github.com/rycus86/prometheus_flask_exporter/raw/master/examples/sample-signals/dashboard.png)
 
 ## App Factory Pattern
 
