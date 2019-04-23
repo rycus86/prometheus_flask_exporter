@@ -412,10 +412,16 @@ class PrometheusMetrics(object):
             **metric_kwargs
         )
 
+        def argspec(func):
+            if hasattr(inspect, 'getfullargspec'):
+                return inspect.getfullargspec(func)
+            else:
+                return inspect.getargspec(func)
+
         def label_value(f):
             if not callable(f):
                 return lambda x: f
-            if inspect.getargspec(f).args:
+            if argspec(f).args:
                 return lambda x: f(x)
             else:
                 return lambda x: f()
@@ -544,4 +550,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
