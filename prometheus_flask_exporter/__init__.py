@@ -12,7 +12,6 @@ from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
-
 NO_PREFIX = '#no_prefix'
 """
 Constant indicating that default metrics should not have any prefix applied.
@@ -463,7 +462,12 @@ class PrometheusMetrics(object):
                     response_for_metric = response
 
                     if not isinstance(response, Response):
-                        if request.endpoint == f.__name__:
+                        endpoint_name = request.endpoint or ''
+
+                        if request.blueprint and '.' in endpoint_name:
+                            endpoint_name = endpoint_name.rsplit('.', 1)[1]
+
+                        if endpoint_name == f.__name__:
                             # we are in a request handler method
                             response_for_metric = make_response(response)
 
@@ -550,4 +554,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.7.2'
+__version__ = '0.7.3'
