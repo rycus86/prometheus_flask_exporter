@@ -147,3 +147,19 @@ class EndpointTest(BaseTestCase):
             'flask_http_request_total', 2.0,
             ('method', 'GET'), ('status', 400)
         )
+
+    def test_named_endpoint(self):
+        metrics = self.metrics()
+
+        @self.app.route('/testing', endpoint='testing_endpoint')
+        @metrics.summary('requests_by_status',
+                         'Request latencies by status',
+                         labels={'status': lambda r: r.status_code})
+        def testing():
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/testing')
+
+        self.assertMetric('requests_by_status_count', 5.0, ('status', 200))
+        self.assertMetric('requests_by_status_sum', '.', ('status', 200))

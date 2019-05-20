@@ -461,13 +461,18 @@ class PrometheusMetrics(object):
                 if not metric:
                     response_for_metric = response
 
-                    if not isinstance(response, Response):
-                        endpoint_name = request.endpoint or ''
+                    if not isinstance(response, Response) and request.endpoint:
+                        view_func = current_app.view_functions[request.endpoint]
 
-                        if request.blueprint and '.' in endpoint_name:
-                            endpoint_name = endpoint_name.rsplit('.', 1)[1]
+                        # There may be decorators 'above' us,
+                        # but before the function is registered with Flask
+                        while view_func and view_func != f:
+                            try:
+                                view_func = view_func.__wrapped__
+                            except AttributeError:
+                                break
 
-                        if endpoint_name == f.__name__:
+                        if view_func == f:
                             # we are in a request handler method
                             response_for_metric = make_response(response)
 
@@ -554,4 +559,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
