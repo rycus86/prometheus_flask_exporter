@@ -8,7 +8,6 @@ from timeit import default_timer
 from flask import request, make_response, current_app
 from flask import Flask, Response
 from werkzeug.serving import is_running_from_reloader
-from werkzeug.exceptions import HTTPException
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
@@ -448,19 +447,24 @@ class PrometheusMetrics(object):
                 else:
                     metric = None
 
+                exception = None
+
                 start_time = default_timer()
                 try:
-                    response = f(*args, **kwargs)
-                except HTTPException as ex:
-                    response = ex
+                    try:
+                        # execute the handler function
+                        response = f(*args, **kwargs)
+                    except Exception as ex:
+                        # let Flask decide to wrap or reraise the Exception
+                        response = current_app.handle_user_exception(ex)
                 except Exception as ex:
+                    # if it was re-raised, treat it as an InternalServerError
+                    exception = ex
                     response = make_response('Exception: %s' % ex, 500)
 
                 total_time = max(default_timer() - start_time, 0)
 
                 if not metric:
-                    response_for_metric = response
-
                     if not isinstance(response, Response) and request.endpoint:
                         view_func = current_app.view_functions[request.endpoint]
 
@@ -474,12 +478,21 @@ class PrometheusMetrics(object):
 
                         if view_func == f:
                             # we are in a request handler method
-                            response_for_metric = make_response(response)
+                            response = make_response(response)
 
-                    metric = get_metric(response_for_metric)
+                    metric = get_metric(response)
 
                 metric_call(metric, time=total_time)
-                return response
+
+                if exception:
+                    try:
+                        # re-raise for the Flask error handler
+                        raise exception
+                    except Exception as ex:
+                        return current_app.handle_user_exception(ex)
+
+                else:
+                    return response
 
             return func
 
@@ -559,4 +572,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.7.4'
+__version__ = '0.8.0'

@@ -1,7 +1,8 @@
-from unittest_helper import BaseTestCase
-from flask import request, abort
-
 import time
+
+import werkzeug.exceptions
+from flask import request, abort
+from unittest_helper import BaseTestCase
 
 try:
     from urllib2 import urlopen
@@ -125,7 +126,10 @@ class EndpointTest(BaseTestCase):
         def raise_exception():
             raise NotImplementedError('On purpose')
 
-        self.client.get('/exception')
+        try:
+            self.client.get('/exception')
+        except NotImplementedError:
+            pass
 
         self.assertMetric('http_with_exception_count', 1.0, ('status', 500))
         self.assertMetric('http_with_exception_sum', '.', ('status', 500))
@@ -147,6 +151,44 @@ class EndpointTest(BaseTestCase):
             'flask_http_request_total', 2.0,
             ('method', 'GET'), ('status', 400)
         )
+
+    def test_error_handler(self):
+        metrics = self.metrics()
+
+        @self.app.errorhandler(NotImplementedError)
+        def not_implemented_handler(e):
+            return 'Not implemented', 400
+
+        @self.app.errorhandler(werkzeug.exceptions.Conflict)
+        def handle_conflict(e):
+            return 'Bad request for conflict', 400, {'X-Original': e.code}
+
+        @self.app.route('/exception')
+        @metrics.summary('http_with_exception',
+                         'Tracks the method raising an exception',
+                         labels={'status': lambda r: r.status_code})
+        def raise_exception():
+            raise NotImplementedError('On purpose')
+
+        @self.app.route('/conflict')
+        @metrics.summary('http_with_code',
+                         'Tracks the error with the original code',
+                         labels={'status': lambda r: r.status_code,
+                                 'code': lambda r: r.headers.get('X-Original', -1)})
+        def conflicts():
+            abort(409)
+
+        for _ in range(3):
+            self.client.get('/exception')
+
+        for _ in range(7):
+            self.client.get('/conflict')
+
+        self.assertMetric('http_with_exception_count', 3.0, ('status', 400))
+        self.assertMetric('http_with_exception_sum', '.', ('status', 400))
+
+        self.assertMetric('http_with_code_count', 7.0, ('status', 400), ('code', 409))
+        self.assertMetric('http_with_code_sum', '.', ('status', 400), ('code', 409))
 
     def test_named_endpoint(self):
         metrics = self.metrics()
