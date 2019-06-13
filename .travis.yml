@@ -36,6 +36,9 @@ jobs:
     env: TEST_NAME=gunicorn
 
   - <<: *integration-stage
+    env: TEST_NAME=gunicorn-internal
+
+  - <<: *integration-stage
     env: TEST_NAME=uwsgi
 
   - <<: *integration-stage

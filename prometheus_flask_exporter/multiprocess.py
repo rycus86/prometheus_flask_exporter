@@ -115,6 +115,9 @@ class UWsgiPrometheusMetrics(MultiprocessPrometheusMetrics):
 class GunicornPrometheusMetrics(MultiprocessPrometheusMetrics):
     """
     A multiprocess `PrometheusMetrics` extension targeting Gunicorn deployments.
+    This variant is expected to serve the metrics endpoint on an individual HTTP server.
+    See `GunicornInternalPrometheusMetrics` for one that serves the metrics endpoint
+    on the same server as the other endpoints.
 
     It should have Gunicorn configuration to start the HTTP server like this:
 
@@ -165,3 +168,47 @@ class GunicornPrometheusMetrics(MultiprocessPrometheusMetrics):
         """
 
         pc_mark_process_dead(pid)
+
+
+class GunicornInternalPrometheusMetrics(GunicornPrometheusMetrics):
+    """
+    A multiprocess `PrometheusMetrics` extension targeting Gunicorn deployments.
+    This variant is expected to expose the metrics endpoint on the same server
+    as the production endpoints are served too.
+    See also the `GunicornPrometheusMetrics` class that will start a
+    new HTTP server for the metrics endpoint.
+
+    It should have Gunicorn configuration to start the HTTP server like this:
+
+        from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
+
+        def child_exit(server, worker):
+            GunicornInternalPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)
+
+    Alternatively, you can use the instance functions as well.
+    """
+
+    def __init__(self, app=None, path='/metrics', export_defaults=True,
+                 defaults_prefix='flask', group_by='path',
+                 buckets=None, registry=None):
+
+        super(GunicornInternalPrometheusMetrics, self).__init__(
+            app=app, export_defaults=export_defaults,
+            defaults_prefix=defaults_prefix, group_by=group_by,
+            buckets=buckets, registry=registry
+        )
+
+        self.register_endpoint(path)
+
+    def should_start_http_server(self):
+        return False
+
+    @classmethod
+    def start_http_server_when_ready(cls, port, host='0.0.0.0'):
+        import warnings
+        warnings.warn(
+            'The `GunicornInternalPrometheusMetrics` class is expected to expose the metrics endpoint '
+            'on the same Flask application, so the `start_http_server_when_ready` should not be called. '
+            'Maybe you are looking for the `GunicornPrometheusMetrics` class?',
+            UserWarning
+        )

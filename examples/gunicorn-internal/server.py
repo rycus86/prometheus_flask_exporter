@@ -1,9 +1,9 @@
 from flask import Flask
 
-from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 
 app = Flask(__name__)
-metrics = GunicornPrometheusMetrics(app)
+metrics = GunicornInternalPrometheusMetrics(app)
 
 
 @app.route('/test')

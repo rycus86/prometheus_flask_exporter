@@ -199,6 +199,23 @@ def child_exit(server, worker):
     GunicornPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)
 ```
 
+Also see the `GunicornInternalPrometheusMetrics` class if you want to have
+the metrics HTTP endpoint exposed internally, on the same Flask application.
+
+```python
+# an extension targeted at Gunicorn deployments with an internal metrics endpoint
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
+
+app = Flask(__name__)
+metrics = GunicornInternalPrometheusMetrics(app)
+
+# then in the Gunicorn config file:
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
+
+def child_exit(server, worker):
+    GunicornInternalPrometheusMetrics.mark_process_dead_on_child_exit(worker.pid)
+```
+
 There's a small wrapper available for [Gunicorn](https://gunicorn.org/) and
 [uWSGI](https://uwsgi-docs.readthedocs.io/en/latest/index.html), for everything
 else you can extend the `prometheus_flask_exporter.multiprocess.MultiprocessPrometheusMetrics` class
