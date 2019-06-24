@@ -42,7 +42,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
 
     def __init__(self, app=None, export_defaults=True,
                  defaults_prefix='flask', group_by='path',
-                 buckets=None, registry=None):
+                 buckets=None, static_labels=None, registry=None):
         """
         Create a new multiprocess-aware Prometheus metrics export configuration.
 
@@ -57,6 +57,8 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
             (defaults to `path`)
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
+        :param static_labels: static labels to attach to each of the
+            metrics exposed by this metrics instance
         :param registry: the Prometheus Registry to use (can be `None` and it
             will be registered with `prometheus_client.multiprocess.MultiProcessCollector`)
         """
@@ -69,7 +71,8 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
         super(MultiprocessPrometheusMetrics, self).__init__(
             app=app, path=None, export_defaults=export_defaults,
             defaults_prefix=defaults_prefix, group_by=group_by,
-            buckets=buckets, registry=registry
+            buckets=buckets, static_labels=static_labels,
+            registry=registry
         )
 
     def start_http_server(self, port, host='0.0.0.0', endpoint=None):
@@ -190,12 +193,33 @@ class GunicornInternalPrometheusMetrics(GunicornPrometheusMetrics):
 
     def __init__(self, app=None, path='/metrics', export_defaults=True,
                  defaults_prefix='flask', group_by='path',
-                 buckets=None, registry=None):
+                 buckets=None, static_labels=None, registry=None):
+        """
+        Create a new multiprocess-aware Prometheus metrics export configuration.
+
+        :param app: the Flask application (can be `None`)
+        :param path: the metrics path (defaults to `/metrics`)
+        :param export_defaults: expose all HTTP request latencies
+            and number of HTTP requests
+        :param defaults_prefix: string to prefix the default exported
+            metrics name with (when either `export_defaults=True` or
+            `export_defaults(..)` is called)
+        :param group_by: group default HTTP metrics by
+            this request property, like `path`, `endpoint`, `url_rule`, etc.
+            (defaults to `path`)
+        :param buckets: the time buckets for request latencies
+            (will use the default when `None`)
+        :param static_labels: static labels to attach to each of the
+            metrics exposed by this metrics instance
+        :param registry: the Prometheus Registry to use (can be `None` and it
+            will be registered with `prometheus_client.multiprocess.MultiProcessCollector`)
+        """
 
         super(GunicornInternalPrometheusMetrics, self).__init__(
             app=app, export_defaults=export_defaults,
             defaults_prefix=defaults_prefix, group_by=group_by,
-            buckets=buckets, registry=registry
+            buckets=buckets, static_labels=static_labels,
+            registry=registry
         )
 
         self.register_endpoint(path)
