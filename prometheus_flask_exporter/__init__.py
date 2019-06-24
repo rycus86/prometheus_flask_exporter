@@ -74,7 +74,7 @@ class PrometheusMetrics(object):
 
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
-                 group_by='path', buckets=None,
+                 group_by='path', buckets=None, static_labels=None,
                  registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
@@ -92,6 +92,8 @@ class PrometheusMetrics(object):
             (defaults to `path`)
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
+        :param static_labels: static labels to attach to each of the
+            metrics exposed by this `PrometheusMetrics` instance
         :param registry: the Prometheus Registry to use
         """
 
@@ -99,6 +101,7 @@ class PrometheusMetrics(object):
         self.path = path
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
+        self._static_labels = static_labels or {}
         self.buckets = buckets
         self.version = __version__
 
@@ -266,10 +269,12 @@ class PrometheusMetrics(object):
         else:
             prefix = prefix + "_"
 
+        additional_labels = self._static_labels.items()
+
         histogram = Histogram(
             '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
-            ('method', duration_group_name, 'status'),
+            ('method', duration_group_name, 'status', *map(lambda kv: kv[0], additional_labels)),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -277,14 +282,14 @@ class PrometheusMetrics(object):
         counter = Counter(
             '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
-            ('method', 'status'),
+            ('method', 'status', *map(lambda kv: kv[0], additional_labels)),
             registry=self.registry
         )
 
         self.info(
             '%sexporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
-            version=self.version
+            version=self.version, **self._static_labels
         )
 
         def before_request():
@@ -303,10 +308,14 @@ class PrometheusMetrics(object):
                     group = getattr(request, duration_group)
 
                 histogram.labels(
-                    request.method, group, response.status_code
+                    request.method, group, response.status_code,
+                    *map(lambda kv: kv[1], additional_labels)
                 ).observe(total_time)
 
-            counter.labels(request.method, response.status_code).inc()
+            counter.labels(
+                request.method, response.status_code,
+                *map(lambda kv: kv[1], additional_labels)
+            ).inc()
 
             return response
 
@@ -385,8 +394,7 @@ class PrometheusMetrics(object):
             registry=self.registry
         )
 
-    @staticmethod
-    def _track(metric_type, metric_call, metric_kwargs, name, description, labels,
+    def _track(self, metric_type, metric_call, metric_kwargs, name, description, labels,
                registry, before=None):
         """
         Internal method decorator logic.
@@ -404,6 +412,13 @@ class PrometheusMetrics(object):
 
         if labels is not None and not isinstance(labels, dict):
             raise TypeError('labels needs to be a dictionary of {labelname: callable}')
+
+        if self._static_labels:
+            # merge the default labels and the specific ones for this metric
+            combined = dict()
+            combined.update(self._static_labels)
+            combined.update(labels)
+            labels = combined
 
         label_names = labels.keys() if labels else tuple()
         parent_metric = metric_type(
@@ -577,4 +592,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.8.2'
+__version__ = '0.9.0'

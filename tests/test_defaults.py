@@ -359,3 +359,49 @@ class DefaultsTest(BaseTestCase):
         metrics.info('no_labels', 'Without labels')
 
         self.assertMetric('no_labels', '1.0')
+
+    def test_static_labels(self):
+        metrics = self.metrics(static_labels={
+            'app_name': 'Test-App',
+            'api_version': 1
+        })
+
+        @self.app.route('/test')
+        @metrics.counter('test_counter', 'Test Counter',
+                         labels={'code': lambda r: r.status_code})
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200),
+            ('app_name', 'Test-App'), ('api_version', 1)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200),
+            ('app_name', 'Test-App'), ('api_version', 1)
+        )
+
+        self.assertMetric(
+            'test_counter_total', '2.0',
+            ('code', 200),
+            ('app_name', 'Test-App'), ('api_version', 1)
+        )
+        self.assertMetric(
+            'test_counter_created', '.',
+            ('code', 200),
+            ('app_name', 'Test-App'), ('api_version', 1)
+        )
+
+        self.assertMetric(
+            'flask_exporter_info', '',
+            ('version', metrics.version),
+            ('app_name', 'Test-App'), ('api_version', 1)
+        )
+
+        response = self.client.get('/metrics')
+        print(response.data.decode('utf-8'))

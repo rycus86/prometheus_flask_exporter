@@ -111,6 +111,11 @@ Similarly, the `start_http_server` allows exposing the endpoint on an
 independent Flask application on a selected HTTP port.
 It also supports overriding the endpoint's path and the HTTP listen address.
 
+You can also set static labels to add to every request managed by
+a `PrometheusMetrics` instance, using the `static_labels` argument.
+This needs to be a dictionary, where each key will become a metric
+label name, and the values their (static) values.
+
 ## Labels
 
 When defining labels for metrics on functions,
@@ -122,6 +127,8 @@ the following values are supported in the dictionary:
   as the argument
 
 Label values are evaluated within the request context.
+The `static_labels` labels are excepted from this,
+those need to be static values.
 
 ## Application information
 
