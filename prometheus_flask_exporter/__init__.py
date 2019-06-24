@@ -274,7 +274,7 @@ class PrometheusMetrics(object):
         histogram = Histogram(
             '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
-            ('method', duration_group_name, 'status', *map(lambda kv: kv[0], additional_labels)),
+            ('method', duration_group_name, 'status') + tuple(map(lambda kv: kv[0], additional_labels)),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -282,7 +282,7 @@ class PrometheusMetrics(object):
         counter = Counter(
             '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
-            ('method', 'status', *map(lambda kv: kv[0], additional_labels)),
+            ('method', 'status') + tuple(map(lambda kv: kv[0], additional_labels)),
             registry=self.registry
         )
 
