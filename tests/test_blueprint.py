@@ -1,7 +1,7 @@
 import sys
 import unittest
 
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, request
 from prometheus_client import CollectorRegistry
 from prometheus_flask_exporter import PrometheusMetrics
 
@@ -37,3 +37,42 @@ class BlueprintTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('requests_by_status_count{status="200"} 1.0', str(response.data))
         self.assertRegex(str(response.data), 'requests_by_status_sum{status="200"} [0-9.]+')
+
+    def test_restful_with_blueprints(self):
+        try:
+            from flask_restful import Resource, Api
+        except ImportError:
+            self.skipTest('Flask-RESTful is not available')
+            return
+
+        class SampleResource(Resource):
+            status = 200
+
+            @self.metrics.summary('requests_by_status', 'Request latencies by status',
+                                  labels={'status': lambda r: r.status_code})
+            def get(self):
+                if 'fail' in request.args:
+                    return 'Not OK', 400
+                else:
+                    return 'OK'
+
+        blueprint = Blueprint('v1', __name__, url_prefix='/v1')
+        api = Api(blueprint)
+
+        api.add_resource(SampleResource, '/sample', endpoint='api_sample')
+
+        self.app.register_blueprint(blueprint)
+        self.metrics.init_app(self.app)
+
+        self.client.get('/v1/sample')
+        self.client.get('/v1/sample')
+        self.client.get('/v1/sample?fail=1')
+
+        response = self.client.get('/metrics')
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn('requests_by_status_count{status="200"} 2.0', str(response.data))
+        self.assertRegex(str(response.data), 'requests_by_status_sum{status="200"} [0-9.]+')
+
+        self.assertIn('requests_by_status_count{status="400"} 1.0', str(response.data))
+        self.assertRegex(str(response.data), 'requests_by_status_sum{status="400"} [0-9.]+')

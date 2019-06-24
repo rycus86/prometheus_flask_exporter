@@ -7,6 +7,7 @@ from timeit import default_timer
 
 from flask import request, make_response, current_app
 from flask import Flask, Response
+from flask.views import MethodViewType
 from werkzeug.serving import is_running_from_reloader
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
@@ -480,6 +481,10 @@ class PrometheusMetrics(object):
                             # we are in a request handler method
                             response = make_response(response)
 
+                        elif hasattr(view_func, 'view_class') and isinstance(view_func.view_class, MethodViewType):
+                            # we are in a method view (for Flask-RESTful for example)
+                            response = make_response(response)
+
                     metric = get_metric(response)
 
                 metric_call(metric, time=total_time)
@@ -572,4 +577,4 @@ class PrometheusMetrics(object):
         return gauge
 
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
