@@ -258,6 +258,23 @@ A final caveat is that the metrics HTTP server will listen on __any__ paths
 on the given HTTP port, not only on `/metrics`, and it is not implemented
 at the moment to be able to change this.
 
+### uWSGI lazy-apps
+
+When [uWSGI](https://uwsgi-docs.readthedocs.io/en/latest/) is configured 
+to run with [lazy-apps]([lazy-apps](https://uwsgi-docs.readthedocs.io/en/latest/articles/TheArtOfGracefulReloading.html#preforking-vs-lazy-apps-vs-lazy)),
+exposing the metrics endpoint on a separate HTTP server (and port) is not functioning yet.
+A workaround is to register the endpoint on the main Flask application.
+
+```python
+app = Flask(__name__)
+metrics = UWsgiPrometheusMetrics(app)
+metrics.register_endpoint('/metrics')
+# instead of metrics.start_http_server(port)
+```
+
+See [#31](https://github.com/rycus86/prometheus_flask_exporter/issues/31)
+for context, and please let me know if you know a better way!
+
 ## License
 
 MIT
