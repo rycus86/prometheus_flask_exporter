@@ -222,7 +222,10 @@ class GunicornInternalPrometheusMetrics(GunicornPrometheusMetrics):
             registry=registry
         )
 
-        self.register_endpoint(path)
+        if app:
+            self.register_endpoint(path)
+        else:
+            self.path = path
 
     def should_start_http_server(self):
         return False
