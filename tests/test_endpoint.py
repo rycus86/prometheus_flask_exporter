@@ -205,3 +205,88 @@ class EndpointTest(BaseTestCase):
 
         self.assertMetric('requests_by_status_count', 5.0, ('status', 200))
         self.assertMetric('requests_by_status_sum', '.', ('status', 200))
+
+    def test_excluded_endpoints(self):
+        self.metrics(excluded_paths='/exc')
+
+        class RequestCounter(object):
+            value = 0
+
+        @self.app.route('/included')
+        def included():
+            RequestCounter.value += 1
+            return 'OK'
+
+        @self.app.route('/excluded')
+        def excluded():
+            RequestCounter.value += 1
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/included')
+            self.client.get('/excluded')
+
+        self.assertEqual(10, RequestCounter.value)
+
+        self.assertMetric(
+            'flask_http_request_total', 5.0,
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', 5.0,
+            ('method', 'GET'), ('status', 200), ('path', '/included')
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('status', 200), ('path', '/excluded')
+        )
+
+    def test_multiple_excluded_endpoints(self):
+        self.metrics(excluded_paths=[
+            '/exc/one',
+            '/exc/t.*'
+        ])
+
+        class RequestCounter(object):
+            value = 0
+
+        @self.app.route('/included')
+        def included():
+            RequestCounter.value += 1
+            return 'OK'
+
+        @self.app.route('/exc/one')
+        def excluded_one():
+            RequestCounter.value += 1
+            return 'OK'
+
+        @self.app.route('/exc/two')
+        def excluded_two():
+            RequestCounter.value += 1
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/included')
+            self.client.get('/exc/one')
+            self.client.get('/exc/two')
+
+        self.assertEqual(15, RequestCounter.value)
+
+        self.assertMetric(
+            'flask_http_request_total', 5.0,
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', 5.0,
+            ('method', 'GET'), ('status', 200), ('path', '/included')
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('status', 200), ('path', '/exc/one')
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('status', 200), ('path', '/exc/two')
+        )

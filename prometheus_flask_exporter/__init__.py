@@ -1,4 +1,5 @@
 import os
+import re
 import inspect
 import warnings
 import functools
@@ -75,7 +76,7 @@ class PrometheusMetrics(object):
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None, static_labels=None,
-                 registry=None, **kwargs):
+                 excluded_paths=None, registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -94,6 +95,8 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param static_labels: static labels to attach to each of the
             metrics exposed by this `PrometheusMetrics` instance
+        :param excluded_paths: regular expression(s) as a string or
+            a list of strings for paths to exclude from tracking
         :param registry: the Prometheus Registry to use
         """
 
@@ -128,6 +131,16 @@ class PrometheusMetrics(object):
 
         else:
             self.group_by = 'path'
+
+        if excluded_paths:
+            if PrometheusMetrics._is_string(excluded_paths):
+                excluded_paths = [excluded_paths]
+
+            self.excluded_paths = [
+                re.compile(p) for p in excluded_paths
+            ]
+        else:
+            self.excluded_paths = None
 
         if app is not None:
             self.init_app(app)
@@ -298,6 +311,10 @@ class PrometheusMetrics(object):
         def after_request(response):
             if hasattr(request, 'prom_do_not_track'):
                 return response
+
+            if self.excluded_paths:
+                if any(pattern.match(request.path) for pattern in self.excluded_paths):
+                    return response
 
             if hasattr(request, 'prom_start_time'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
@@ -591,5 +608,12 @@ class PrometheusMetrics(object):
 
         return gauge
 
+    @staticmethod
+    def _is_string(value):
+        try:
+            return isinstance(value, basestring)  # python2
+        except NameError:
+            return isinstance(value, str)  # python3
 
-__version__ = '0.9.1'
+
+__version__ = '0.9.2'
