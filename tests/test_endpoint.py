@@ -206,6 +206,80 @@ class EndpointTest(BaseTestCase):
         self.assertMetric('requests_by_status_count', 5.0, ('status', 200))
         self.assertMetric('requests_by_status_sum', '.', ('status', 200))
 
+    def test_track_multiple_endpoints(self):
+        metrics = self.metrics()
+
+        test_request_counter = metrics.counter(
+            'test_counter', 'Request counter for tests',
+            labels={'path': lambda: request.path}
+        )
+
+        @self.app.route('/first')
+        @test_request_counter
+        def first():
+            return 'OK'
+
+        @self.app.route('/second')
+        @test_request_counter
+        def second():
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/first')
+            self.client.get('/second')
+
+        self.assertMetric(
+            'flask_http_request_total', 10.0,
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric(
+            'test_counter_total', 5.0, ('path', '/first')
+        )
+        self.assertMetric(
+            'test_counter_total', 5.0, ('path', '/second')
+        )
+
+    def test_track_more_defaults(self):
+        metrics = self.metrics()
+
+        @self.app.route('/first')
+        def first():
+            return 'OK'
+
+        @self.app.route('/second')
+        def second():
+            return 'OK'
+
+        metrics.register_default(
+            metrics.counter(
+                'test_counter', 'Request counter for tests',
+                labels={'path': lambda: request.path}
+            ),
+            metrics.summary(
+                'test_summary', 'Request summary for tests',
+                labels={'path': lambda: request.path}
+            )
+        )
+
+        for _ in range(5):
+            self.client.get('/first')
+            self.client.get('/second')
+
+        print(self.client.get('/metrics').data.decode('utf-8'))
+
+        self.assertMetric(
+            'flask_http_request_total', 10.0,
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric(
+            'test_counter_total', 5.0, ('path', '/first')
+        )
+        self.assertMetric(
+            'test_counter_total', 5.0, ('path', '/second')
+        )
+
     def test_excluded_endpoints(self):
         self.metrics(excluded_paths='/exc')
 

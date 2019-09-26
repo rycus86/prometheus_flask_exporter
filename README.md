@@ -71,10 +71,59 @@ The following metrics are exported by default
 The prefix for the default metrics can be controlled by the `defaults_prefix` parameter.
 Is you don't want to use any prefix, pass the `prometheus_flask_exporter.NO_PREFIX` value in.
 
-You can avoid recording metrics on individual endpoints by decorating them
-with `@metrics.do_not_track()`, or use the `excluded_paths` argument when
-creating the `PrometheusMetrics` instance that takes a regular expression
-(either a single string, or a list) and matching paths will be excluded.
+To register your own *default* metrics that will track all registered
+Flask view functions, use the `register_default` function.
+
+```python
+app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+
+@app.route('/simple')
+def simple_get():
+    pass
+    
+metrics.register_default(
+    metrics.counter(
+        'by_path_counter', 'Request count by request paths',
+        labels={'path': lambda: request.path}
+    )
+)
+```
+
+*Note:* register your default metrics after all routes have been set up.
+
+If you want to apply the same metric to multiple (but not all) endpoints,
+create its wrapper first, then add to each function.
+
+```python
+app = Flask(__name__)
+metrics = PrometheusMetrics(app)
+
+by_path_counter = metrics.counter(
+    'by_path_counter', 'Request count by request paths',
+    labels={'path': lambda: request.path}
+)
+
+@app.route('/simple')
+@by_path_counter
+def simple_get():
+    pass
+    
+@app.route('/plain')
+@by_path_counter
+def plain():
+    pass
+    
+@app.route('/not/tracked/by/path')
+def not_tracked_by_path():
+    pass
+```
+
+You can avoid recording metrics on individual endpoints
+by decorating them with `@metrics.do_not_track()`, or use the 
+`excluded_paths` argument when creating the `PrometheusMetrics` instance
+that takes a regular expression (either a single string, or a list) and
+matching paths will be excluded.
 
 ## Configuration
 

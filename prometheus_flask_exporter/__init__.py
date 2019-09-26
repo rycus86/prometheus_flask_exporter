@@ -339,6 +339,27 @@ class PrometheusMetrics(object):
         app.before_request(before_request)
         app.after_request(after_request)
 
+    def register_default(self, *metric_wrappers):
+        """
+        Registers metric wrappers to track all endpoints,
+        similar to `export_defaults` but with user defined metrics.
+        Call this function after all routes have been set up.
+
+        Use the metric wrappers as arguments:
+          - metrics.counter(..)
+          - metrics.gauge(..)
+          - metrics.summary(..)
+          - metrics.histogram(..)
+
+        :param metric_wrappers: one or more metric wrappers to register
+            for all available endpoints
+        """
+
+        for endpoint, view_func in self.app.view_functions.items():
+            for wrapper in metric_wrappers:
+                view_func = wrapper(view_func)
+                self.app.view_functions[endpoint] = view_func
+
     def histogram(self, name, description, labels=None, **kwargs):
         """
         Use a Histogram to track the execution time and invocation count
@@ -616,4 +637,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.9.3'
+__version__ = '0.10.0'
