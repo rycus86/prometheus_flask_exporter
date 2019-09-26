@@ -71,6 +71,11 @@ The following metrics are exported by default
 The prefix for the default metrics can be controlled by the `defaults_prefix` parameter.
 Is you don't want to use any prefix, pass the `prometheus_flask_exporter.NO_PREFIX` value in.
 
+You can avoid recording metrics on individual endpoints by decorating them
+with `@metrics.do_not_track()`, or use the `excluded_paths` argument when
+creating the `PrometheusMetrics` instance that takes a regular expression
+(either a single string, or a list) and matching paths will be excluded.
+
 ## Configuration
 
 By default, the metrics are exposed on the same Flask application on the
