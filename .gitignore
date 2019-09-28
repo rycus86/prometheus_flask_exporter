@@ -3,3 +3,5 @@
 *.pyc
 .coverage
 coverage.xml
+.python-version
+__pycache__

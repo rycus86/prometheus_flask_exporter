@@ -18,11 +18,12 @@ def _check_multiproc_env_var():
         or if it does not point to a directory
     """
 
-    if 'prometheus_multiproc_dir' in os.environ:
-        if os.path.isdir(os.environ['prometheus_multiproc_dir']):
-            return
+    prometheus_dir = os.getenv('prometheus_multiproc_dir') or os.getenv('PROMETHEUS_MULTIPROC_DIR')
+    if prometheus_dir and os.path.isdir(prometheus_dir):
+        return
 
-    raise ValueError('env prometheus_multiproc_dir is not set or not a directory')
+    raise ValueError('env prometheus_multiproc_dir/PROMETHEUS_MULTIPROC_DIR '
+                     'is not set or not a directory')
 
 
 class MultiprocessPrometheusMetrics(PrometheusMetrics):
