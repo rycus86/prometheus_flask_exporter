@@ -30,6 +30,10 @@ for _ in $(seq 1 10); do
     fi
 done
 
+#curl -s http://localhost:8889/metrics
+#docker logs wsgi-sample
+docker exec wsgi-sample python --version
+
 curl -s http://localhost:8889/metrics \
   | grep 'flask_http_request_duration_seconds_count{method="GET",path="/test",status="200"} 10.0' \
   > /dev/null

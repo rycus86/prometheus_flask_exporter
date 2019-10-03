@@ -339,7 +339,7 @@ class PrometheusMetrics(object):
         app.before_request(before_request)
         app.after_request(after_request)
 
-    def register_default(self, *metric_wrappers, app=None):
+    def register_default(self, *metric_wrappers, **kwargs):
         """
         Registers metric wrappers to track all endpoints,
         similar to `export_defaults` but with user defined metrics.
@@ -357,6 +357,7 @@ class PrometheusMetrics(object):
             (by default it is the application registered with this class)
         """
 
+        app = kwargs.get('app')
         if app is None:
             app = self.app or current_app
 

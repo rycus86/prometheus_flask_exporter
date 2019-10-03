@@ -8,15 +8,17 @@ python:
 - '2.7'
 
 install: skip
-script:
+before_script:
   # prepare reporters
   - pip install coveralls
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   # install module
   - pip install . --upgrade
+script:
   # python tests
   - python -m coverage run --branch --source=prometheus_flask_exporter -m unittest discover -s tests -v
+after_success:
   # coverage reports
   - python -m coverage report -m
   - python -m coverage xml
@@ -31,6 +33,8 @@ jobs:
   - &integration-stage
     stage: integration
     sudo: true
+    before_script: skip
+    after_success: skip
     script:
       - sh examples/${TEST_NAME}/run_tests.sh
     env: TEST_NAME=gunicorn
@@ -54,6 +58,8 @@ jobs:
     env: TEST_NAME=reload
 
   - stage: deploy
+    before_script: skip
+    after_success: skip
     script: skip
     before_deploy:
       - pip install setuptools wheel twine
@@ -67,5 +73,7 @@ jobs:
         tags: true
 
   - stage: verify
+    before_script: skip
+    after_success: skip
     script:
       - pip install prometheus-flask-exporter
