@@ -23,7 +23,7 @@ after_success:
   - python -m coverage report -m
   - python -m coverage xml
   - |
-    if [[ "$(python --version 2>&1)" = *2.7* ]]; then
+    if [[ "$(python --version 2>&1)" = *3.7* ]]; then
       coveralls || exit 0
       ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT || exit 0
     fi
