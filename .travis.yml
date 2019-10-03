@@ -58,7 +58,6 @@ jobs:
     env: TEST_NAME=reload
 
   - stage: deploy
-    before_script: skip
     after_success: skip
     script: skip
     before_deploy:
