@@ -1,40 +1,41 @@
 language: python
 dist: xenial
-python:
-- '3.7'
-- '3.6'
-- '3.5'
-- '3.4'
-- '2.7'
+python: '3.7'
 
 install: skip
-before_script:
-  # prepare reporters
-  - pip install coveralls
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  # install module
-  - pip install . --upgrade
-script:
-  # python tests
-  - python -m coverage run --branch --source=prometheus_flask_exporter -m unittest discover -s tests -v
-after_success:
-  # coverage reports
-  - python -m coverage report -m
-  - python -m coverage xml
-  - |
-    if [[ "$(python --version 2>&1)" = *3.7* ]]; then
-      coveralls || exit 0
-      ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT || exit 0
-    fi
 
 jobs:
   include:
+  - stage: test
+    python:
+      - '3.7'
+      - '3.6'
+      - '3.5'
+      - '3.4'
+      - '2.7'
+    before_script:
+      # prepare reporters
+      - pip install coveralls
+      - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+      - chmod +x ./cc-test-reporter
+      # install module
+      - pip install . --upgrade
+    script:
+      # python tests
+      - python -m coverage run --branch --source=prometheus_flask_exporter -m unittest discover -s tests -v
+    after_success:
+      # coverage reports
+      - python -m coverage report -m
+      - python -m coverage xml
+      - |
+        if [[ "$(python --version 2>&1)" = *3.7* ]]; then
+          coveralls || exit 0
+          ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT || exit 0
+        fi
+
   - &integration-stage
     stage: integration
     sudo: true
-    before_script: skip
-    after_success: skip
     script:
       - sh examples/${TEST_NAME}/run_tests.sh
     env: TEST_NAME=gunicorn
@@ -71,7 +72,5 @@ jobs:
         tags: true
 
   - stage: verify
-    before_script: skip
-    after_success: skip
     script:
       - pip install prometheus-flask-exporter
