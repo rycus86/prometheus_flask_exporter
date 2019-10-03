@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import inspect
 import warnings
 import functools
@@ -12,6 +13,20 @@ from flask.views import MethodViewType
 from werkzeug.serving import is_running_from_reloader
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+
+if sys.version_info[0:2] >= (3, 4):
+    # Python v3.4+ has a built-in has __wrapped__ attribute
+    wraps = functools.wraps
+else:
+    # in previous Python version we have to set the missing attribute
+    def wraps(wrapped, assigned=functools.WRAPPER_ASSIGNMENTS,
+              updated=functools.WRAPPER_UPDATES):
+        def wrapper(f):
+            f = functools.wraps(wrapped, assigned, updated)(f)
+            f.__wrapped__ = wrapped
+            return f
+
+        return wrapper
 
 NO_PREFIX = '#no_prefix'
 """
@@ -502,7 +517,7 @@ class PrometheusMetrics(object):
                 return parent_metric
 
         def decorator(f):
-            @functools.wraps(f)
+            @wraps(f)
             def func(*args, **kwargs):
                 if before:
                     metric = get_metric(None)
@@ -582,7 +597,7 @@ class PrometheusMetrics(object):
         """
 
         def decorator(f):
-            @functools.wraps(f)
+            @wraps(f)
             def func(*args, **kwargs):
                 request.prom_do_not_track = True
                 return f(*args, **kwargs)
@@ -654,4 +669,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.10.1'
+__version__ = '0.11.0'

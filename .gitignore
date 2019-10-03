@@ -1,5 +1,6 @@
 .idea/
 .venv/
+.venv27/
 *.pyc
 .coverage
 coverage.xml
