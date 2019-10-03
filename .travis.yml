@@ -58,7 +58,6 @@ jobs:
     env: TEST_NAME=reload
 
   - stage: deploy
-    after_success: skip
     script: skip
     before_deploy:
       - pip install setuptools wheel twine
