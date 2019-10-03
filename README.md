@@ -91,6 +91,8 @@ metrics.register_default(
 ```
 
 *Note:* register your default metrics after all routes have been set up.
+Also note, that Gauge metrics registered as default will track the
+`/metrics` endpoint, and this can't be disabled at the moment.
 
 If you want to apply the same metric to multiple (but not all) endpoints,
 create its wrapper first, then add to each function.

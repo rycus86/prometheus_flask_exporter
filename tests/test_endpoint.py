@@ -266,8 +266,6 @@ class EndpointTest(BaseTestCase):
             self.client.get('/first')
             self.client.get('/second')
 
-        print(self.client.get('/metrics').data.decode('utf-8'))
-
         self.assertMetric(
             'flask_http_request_total', 10.0,
             ('method', 'GET'), ('status', 200)

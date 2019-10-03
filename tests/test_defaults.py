@@ -109,6 +109,31 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/skip'), ('status', 200)
         )
 
+    def test_do_not_track_wrapping(self):
+        metrics = self.metrics()
+
+        @self.app.route('/skip')
+        @metrics.gauge('gauge_before', 'Gauge before')
+        @metrics.counter('cnt_before', 'Counter before')
+        @metrics.do_not_track()
+        @metrics.counter('cnt_after', 'Counter after')
+        @metrics.gauge('gauge_after', 'Gauge after')
+        def test():
+            return 'OK'
+
+        self.client.get('/skip')
+        self.client.get('/skip')
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric('cnt_before_total', 0.0)
+        self.assertMetric('cnt_after_total', 0.0)
+        self.assertMetric('gauge_before', 0.0)
+        self.assertMetric('gauge_after', 0.0)
+
     def test_custom_path(self):
         self.metrics(path='/my-metrics')
 
@@ -402,6 +427,3 @@ class DefaultsTest(BaseTestCase):
             ('version', metrics.version),
             ('app_name', 'Test-App'), ('api_version', 1)
         )
-
-        response = self.client.get('/metrics')
-        print(response.data.decode('utf-8'))

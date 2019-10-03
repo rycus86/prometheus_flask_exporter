@@ -339,7 +339,7 @@ class PrometheusMetrics(object):
         app.before_request(before_request)
         app.after_request(after_request)
 
-    def register_default(self, *metric_wrappers):
+    def register_default(self, *metric_wrappers, app=None):
         """
         Registers metric wrappers to track all endpoints,
         similar to `export_defaults` but with user defined metrics.
@@ -353,12 +353,17 @@ class PrometheusMetrics(object):
 
         :param metric_wrappers: one or more metric wrappers to register
             for all available endpoints
+        :param app: the Flask application to register the default metric for
+            (by default it is the application registered with this class)
         """
 
-        for endpoint, view_func in self.app.view_functions.items():
+        if app is None:
+            app = self.app or current_app
+
+        for endpoint, view_func in app.view_functions.items():
             for wrapper in metric_wrappers:
                 view_func = wrapper(view_func)
-                self.app.view_functions[endpoint] = view_func
+                app.view_functions[endpoint] = view_func
 
     def histogram(self, name, description, labels=None, **kwargs):
         """
@@ -412,7 +417,8 @@ class PrometheusMetrics(object):
             lambda metric, time: metric.dec(),
             kwargs, name, description, labels,
             registry=self.registry,
-            before=lambda metric: metric.inc()
+            before=lambda metric: metric.inc(),
+            revert_when_not_tracked=lambda metric: metric.dec()
         )
 
     def counter(self, name, description, labels=None, **kwargs):
@@ -433,7 +439,7 @@ class PrometheusMetrics(object):
         )
 
     def _track(self, metric_type, metric_call, metric_kwargs, name, description, labels,
-               registry, before=None):
+               registry, before=None, revert_when_not_tracked=None):
         """
         Internal method decorator logic.
 
@@ -443,9 +449,12 @@ class PrometheusMetrics(object):
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param registry: the Prometheus Registry to use
         :param before: an optional callable to invoke before executing the
             request handler method accepting the single `metric` argument
-        :param registry: the Prometheus Registry to use
+        :param revert_when_not_tracked: an optional callable to invoke when
+            a non-tracked endpoint is being handled to undo any actions already
+            done on it, accepts a single `metric` argument
         """
 
         if labels is not None and not isinstance(labels, dict):
@@ -515,6 +524,13 @@ class PrometheusMetrics(object):
                     # if it was re-raised, treat it as an InternalServerError
                     exception = ex
                     response = make_response('Exception: %s' % ex, 500)
+
+                if hasattr(request, 'prom_do_not_track'):
+                    if metric and revert_when_not_tracked:
+                        # special handling for Gauge metrics
+                        revert_when_not_tracked(metric)
+
+                    return response
 
                 total_time = max(default_timer() - start_time, 0)
 
@@ -637,4 +653,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.10.0'
+__version__ = '0.10.1'
