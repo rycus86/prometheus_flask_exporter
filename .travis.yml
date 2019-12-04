@@ -1,6 +1,7 @@
 language: python
 dist: xenial
 python:
+- '3.8'
 - '3.7'
 - '3.6'
 - '3.5'
@@ -53,6 +54,12 @@ jobs:
 
   - <<: *integration-stage
     env: TEST_NAME=wsgi
+
+  - <<: *integration-stage
+    env: TEST_NAME=restful-with-blueprints
+
+  - <<: *integration-stage
+    env: TEST_NAME=restplus-default-metrics
 
   - <<: *integration-stage
     env: TEST_NAME=reload
