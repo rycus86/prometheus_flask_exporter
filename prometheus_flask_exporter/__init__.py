@@ -685,4 +685,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.12.0'
+__version__ = '0.12.1'
