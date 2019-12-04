@@ -324,7 +324,7 @@ class PrometheusMetrics(object):
             request.prom_start_time = default_timer()
 
         def after_request(response):
-            if hasattr(request, 'prom_do_not_track'):
+            if hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
                 return response
 
             if self.excluded_paths:
@@ -541,7 +541,7 @@ class PrometheusMetrics(object):
                     exception = ex
                     response = make_response('Exception: %s' % ex, 500)
 
-                if hasattr(request, 'prom_do_not_track'):
+                if hasattr(request, 'prom_exclude_all'):
                     if metric and revert_when_not_tracked:
                         # special handling for Gauge metrics
                         revert_when_not_tracked(metric)
@@ -600,6 +600,22 @@ class PrometheusMetrics(object):
             @wraps(f)
             def func(*args, **kwargs):
                 request.prom_do_not_track = True
+                return f(*args, **kwargs)
+
+            return func
+
+        return decorator
+
+    @staticmethod
+    def exclude_all_metrics():
+        """
+        Decorator to skip all metrics collection for the method.
+        """
+
+        def decorator(f):
+            @wraps(f)
+            def func(*args, **kwargs):
+                request.prom_exclude_all = True
                 return f(*args, **kwargs)
 
             return func
@@ -669,4 +685,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.11.0'
+__version__ = '0.12.0'

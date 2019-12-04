@@ -125,7 +125,10 @@ You can avoid recording metrics on individual endpoints
 by decorating them with `@metrics.do_not_track()`, or use the 
 `excluded_paths` argument when creating the `PrometheusMetrics` instance
 that takes a regular expression (either a single string, or a list) and
-matching paths will be excluded.
+matching paths will be excluded. If you have functions that are inherited
+or otherwise get metrics collected that you don't want, you can use
+`@metrics.exclude_all_metrics()` to exclude both default and non-default
+metrics being collected from it.
 
 ## Configuration
 

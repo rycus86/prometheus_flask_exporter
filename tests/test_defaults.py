@@ -109,13 +109,38 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/skip'), ('status', 200)
         )
 
-    def test_do_not_track_wrapping(self):
+    def test_do_not_track_only_excludes_defaults(self):
+        metrics = self.metrics()
+
+        @self.app.route('/skip/defaults')
+        @metrics.counter('cnt_before', 'Counter before')
+        @metrics.do_not_track()
+        @metrics.counter('cnt_after', 'Counter after')
+        def test():
+            return 'OK'
+
+        self.client.get('/skip/defaults')
+        self.client.get('/skip/defaults')
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('path', '/skip/defaults'), ('status', 200)
+        )
+
+        self.assertMetric('cnt_before_total', 2.0)
+        self.assertMetric('cnt_after_total', 2.0)
+
+    def test_exclude_all_wrapping(self):
         metrics = self.metrics()
 
         @self.app.route('/skip')
         @metrics.gauge('gauge_before', 'Gauge before')
         @metrics.counter('cnt_before', 'Counter before')
-        @metrics.do_not_track()
+        @metrics.exclude_all_metrics()
         @metrics.counter('cnt_after', 'Counter after')
         @metrics.gauge('gauge_after', 'Gauge after')
         def test():
