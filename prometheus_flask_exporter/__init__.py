@@ -480,7 +480,9 @@ class PrometheusMetrics(object):
             # merge the default labels and the specific ones for this metric
             combined = dict()
             combined.update(self._static_labels)
-            combined.update(labels)
+            # labels defaults to None
+            if labels:
+                combined.update(labels)
             labels = combined
 
         label_names = labels.keys() if labels else tuple()
