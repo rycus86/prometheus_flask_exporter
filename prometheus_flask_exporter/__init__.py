@@ -477,11 +477,14 @@ class PrometheusMetrics(object):
             raise TypeError('labels needs to be a dictionary of {labelname: callable}')
 
         if self._static_labels:
-            # merge the default labels and the specific ones for this metric
-            combined = dict()
-            combined.update(self._static_labels)
-            combined.update(labels)
-            labels = combined
+            if not labels:
+                labels = self._static_labels
+            else:
+                # merge the default labels and the specific ones for this metric
+                combined = dict()
+                combined.update(self._static_labels)
+                combined.update(labels)
+                labels = combined
 
         label_names = labels.keys() if labels else tuple()
         parent_metric = metric_type(
