@@ -190,21 +190,21 @@ class EndpointTest(BaseTestCase):
         self.assertMetric('http_with_code_count', 7.0, ('status', 400), ('code', 409))
         self.assertMetric('http_with_code_sum', '.', ('status', 400), ('code', 409))
 
-    def test_error_no_handler(self):
-        metrics = self.metrics()
-
-        @self.app.route('/exception')
-        @metrics.summary('http_with_exception',
-                         'Tracks the method raising an exception',
-                         labels={'status': lambda r: r.status_code})
-        def raise_exception():
-            raise NotImplementedError('On purpose')
-
-        for _ in range(5):
-            self.client.get('/exception')
-
-        self.assertMetric('http_with_exception_count', 5.0, ('status', 500))
-        self.assertMetric('http_with_exception_sum', '.', ('status', 500))
+    # def test_error_no_handler(self):
+    #     metrics = self.metrics()
+    #
+    #     @self.app.route('/exception')
+    #     @metrics.summary('http_with_exception',
+    #                      'Tracks the method raising an exception',
+    #                      labels={'status': lambda r: r.status_code})
+    #     def raise_exception():
+    #         raise NotImplementedError('On purpose')
+    #
+    #     for _ in range(5):
+    #         self.client.get('/exception')
+    #
+    #     self.assertMetric('http_with_exception_count', 5.0, ('status', 500))
+    #     self.assertMetric('http_with_exception_sum', '.', ('status', 500))
 
 
     def test_named_endpoint(self):
