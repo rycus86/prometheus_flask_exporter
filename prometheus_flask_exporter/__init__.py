@@ -380,7 +380,7 @@ class PrometheusMetrics(object):
                 *map(lambda kv: kv[1], additional_labels)
             ).inc()
 
-            return response
+            return
 
 
         app.before_request(before_request)
