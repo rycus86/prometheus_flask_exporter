@@ -203,11 +203,10 @@ class EndpointTest(BaseTestCase):
             except NotImplementedError:
                 pass
 
-        self.assertMetric('flask_http_request_total', 5.0, ('status', 500))
-        self.assertMetric('flask_http_request_sum', '.', ('status', 500))
+        self.assertMetric('flask_http_request_total', 5.0, ('method', 'GET'), ('status', 500))
         self.assertMetric(
             'flask_http_request_duration_seconds_count', 5.0,
-            ('method', 'GET'), ('status', 500), ('path', '/included')
+            ('method', 'GET'), ('status', 500), ('path', '/exception')
         )
 
     def test_named_endpoint(self):
