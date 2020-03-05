@@ -314,6 +314,13 @@ class PrometheusMetrics(object):
             registry=self.registry
         )
 
+        failed_counter = Counter(
+            '%sfailed_http_request_total' % prefix,
+            'Total number of HTTP requests that raise unhandled exceptions',
+            ('method', 'status') + tuple(map(lambda kv: kv[0], additional_labels)),
+            registry=self.registry
+        )
+
         self.info(
             '%sexporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
@@ -352,30 +359,14 @@ class PrometheusMetrics(object):
             return response
 
         def teardown_request(exception=None):
-            if not exception:
-                return
-
-            if hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
+            if exception or hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
                 return
 
             if self.excluded_paths:
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return
 
-            if hasattr(request, 'prom_start_time'):
-                total_time = max(default_timer() - request.prom_start_time, 0)
-
-                if callable(duration_group):
-                    group = duration_group(request)
-                else:
-                    group = getattr(request, duration_group)
-
-                histogram.labels(
-                    request.method, group, 500,
-                    *map(lambda kv: kv[1], additional_labels)
-                ).observe(total_time)
-
-            counter.labels(
+            countfailed_counterer.labels(
                 request.method, 500,
                 *map(lambda kv: kv[1], additional_labels)
             ).inc()
