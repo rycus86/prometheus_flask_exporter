@@ -359,14 +359,14 @@ class PrometheusMetrics(object):
             return response
 
         def teardown_request(exception=None):
-            if exception or hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
+            if not exception or hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
                 return
 
             if self.excluded_paths:
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return
 
-            countfailed_counterer.labels(
+            failed_counter.labels(
                 request.method, 500,
                 *map(lambda kv: kv[1], additional_labels)
             ).inc()
