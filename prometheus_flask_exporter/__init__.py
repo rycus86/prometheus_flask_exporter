@@ -379,7 +379,6 @@ class PrometheusMetrics(object):
 
             return
 
-
         app.before_request(before_request)
         app.after_request(after_request)
         app.teardown_request(teardown_request)
@@ -718,4 +717,4 @@ class PrometheusMetrics(object):
             return isinstance(value, str)  # python3
 
 
-__version__ = '0.12.2'
+__version__ = '0.13.0'
