@@ -351,8 +351,38 @@ class PrometheusMetrics(object):
 
             return response
 
+        def teardown_request(exception=None):
+            if not exception or hasattr(request, 'prom_do_not_track') or hasattr(request, 'prom_exclude_all'):
+                return
+
+            if self.excluded_paths:
+                if any(pattern.match(request.path) for pattern in self.excluded_paths):
+                    return
+
+            if hasattr(request, 'prom_start_time'):
+                total_time = max(default_timer() - request.prom_start_time, 0)
+
+                if callable(duration_group):
+                    group = duration_group(request)
+                else:
+                    group = getattr(request, duration_group)
+
+                histogram.labels(
+                    request.method, group, 500,
+                    *map(lambda kv: kv[1], additional_labels)
+                ).observe(total_time)
+
+            counter.labels(
+                request.method, 500,
+                *map(lambda kv: kv[1], additional_labels)
+            ).inc()
+
+            return
+
+
         app.before_request(before_request)
         app.after_request(after_request)
+        app.teardown_request(teardown_request)
 
     def register_default(self, *metric_wrappers, **kwargs):
         """

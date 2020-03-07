@@ -190,6 +190,25 @@ class EndpointTest(BaseTestCase):
         self.assertMetric('http_with_code_count', 7.0, ('status', 400), ('code', 409))
         self.assertMetric('http_with_code_sum', '.', ('status', 400), ('code', 409))
 
+    def test_error_no_handler(self):
+        self.metrics()
+
+        @self.app.route('/exception')
+        def raise_exception():
+            raise NotImplementedError('On purpose')
+
+        for _ in range(5):
+            try:
+                self.client.get('/exception')
+            except NotImplementedError:
+                pass
+
+        self.assertMetric('flask_http_request_total', 5.0, ('method', 'GET'), ('status', 500))
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', 5.0,
+            ('method', 'GET'), ('status', 500), ('path', '/exception')
+        )
+
     def test_named_endpoint(self):
         metrics = self.metrics()
 
