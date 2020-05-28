@@ -88,7 +88,7 @@ class PrometheusMetrics(object):
         - Without an argument, possibly to use with the Flask `request` object
     """
 
-    def __init__(self, app, path='/metrics',
+    def __init__(self, app=None, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None, static_labels=None,
                  excluded_paths=None, registry=None, **kwargs):
@@ -168,11 +168,10 @@ class PrometheusMetrics(object):
         This is usually used with a flask "app factory" configuration. Please
         see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
 
-        Note, that you need to use `PrometheusMetrics(app=None, ...)`
-        for this mode, otherwise it is called automatically.
-
         :param app: the Flask application
         """
+
+        self.app = app
 
         if self.path:
             self.register_endpoint(self.path, app)
