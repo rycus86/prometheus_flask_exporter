@@ -78,6 +78,31 @@ class EndpointTest(BaseTestCase):
         self.assertEqual(response.getcode(), 200)
         self.assertIn('flask_exporter_info', str(response.read()))
 
+    def test_http_status_enum(self):
+        try:
+            from http import HTTPStatus
+        except ImportError:
+            self.skipTest('http.HTTPStatus is not available')
+
+        metrics = self.metrics()
+
+        @self.app.route('/no/content')
+        def no_content():
+            import http
+            return {}, http.HTTPStatus.NO_CONTENT
+
+        self.client.get('/no/content')
+        self.client.get('/no/content')
+
+        self.assertMetric(
+            'flask_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 204)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/no/content'), ('status', 204)
+        )
+
     def test_abort(self):
         metrics = self.metrics()
 

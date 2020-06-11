@@ -28,6 +28,20 @@ else:
 
         return wrapper
 
+try:
+    # try to convert http.HTTPStatus to int status codes
+    from http import HTTPStatus
+
+    def _to_status_code(response_status):
+        if isinstance(response_status, HTTPStatus):
+            return response_status.value
+        else:
+            return response_status
+except ImportError:
+    # otherwise simply use the status as is
+    def _to_status_code(response_status):
+        return response_status
+
 NO_PREFIX = '#no_prefix'
 """
 Constant indicating that default metrics should not have any prefix applied.
@@ -340,12 +354,12 @@ class PrometheusMetrics(object):
                     group = getattr(request, duration_group)
 
                 histogram.labels(
-                    request.method, group, response.status_code,
+                    request.method, group, _to_status_code(response.status_code),
                     *map(lambda kv: kv[1], additional_labels)
                 ).observe(total_time)
 
             counter.labels(
-                request.method, response.status_code,
+                request.method, _to_status_code(response.status_code),
                 *map(lambda kv: kv[1], additional_labels)
             ).inc()
 
