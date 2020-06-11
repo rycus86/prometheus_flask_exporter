@@ -1,6 +1,6 @@
 FROM python:3.8-alpine
 
-RUN apk add --no-cache curl && pip install flask flask-restplus prometheus_client
+RUN apk add --no-cache curl && pip install flask flask-restx prometheus_client
 
 ADD . /tmp/latest
 RUN pip install -e /tmp/latest --upgrade

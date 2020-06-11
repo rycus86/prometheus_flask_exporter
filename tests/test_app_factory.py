@@ -17,7 +17,7 @@ class AppFactoryTest(unittest.TestCase):
             self.assertNotRegex = self.assertNotRegexpMatches
 
         registry = CollectorRegistry(auto_describe=True)
-        self.metrics = PrometheusMetrics(app=None, registry=registry)
+        self.metrics = PrometheusMetrics.for_app_factory(registry=registry)
         self.metrics.init_app(self.app)
 
     def test_restricted(self):

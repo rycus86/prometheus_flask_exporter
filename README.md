@@ -213,10 +213,10 @@ the demo in the [examples/sample-signals](https://github.com/rycus86/prometheus_
 
 ## App Factory Pattern
 
-This library also supports the flask [app factory pattern](http://flask.pocoo.org/docs/1.0/patterns/appfactories/). Use the `init_app` method to attach the library to one or more application objects. Note, that to use this mode, you'll need to pass in `None` for the `app` in the constructor.
+This library also supports the Flask [app factory pattern](http://flask.pocoo.org/docs/1.0/patterns/appfactories/). Use the `init_app` method to attach the library to one or more application objects. Note, that to use this mode, you'll need to pass in `None` for the `app` in the constructor.
 
 ```python
-metrics = PrometheusMetrics(app=None, ...)
+metrics = PrometheusMetrics.for_app_factory()
 # then later:
 metrics.init_app(app)
 ```

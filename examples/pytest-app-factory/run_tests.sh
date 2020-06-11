@@ -7,7 +7,7 @@ _fail() {
     exit 1
 }
 
-docker build -f Dockerfile -t pytest-sample . > /dev/null || _fail
+docker build -f Dockerfile -t pytest-sample ../../. > /dev/null || _fail
 docker run --rm -it --name pytest-sample pytest-sample py.test test
 
 if [ "$?" != "0" ]; then

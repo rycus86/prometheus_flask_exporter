@@ -1,9 +1,9 @@
 from flask import Flask, request
-from flask_restplus import Resource, Api
+from flask_restx import Resource, Api
 
 from prometheus_flask_exporter import PrometheusMetrics
 
-metrics = PrometheusMetrics(app=None)
+metrics = PrometheusMetrics.for_app_factory()
 
 
 def create_app():

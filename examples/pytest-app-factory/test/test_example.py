@@ -11,7 +11,7 @@ from myapp import extensions as myapp_extensions
 def app() -> Flask:
     app = create_app('myapp.config.TestConfig')
     prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
-    myapp_extensions.metrics = GunicornInternalPrometheusMetrics(app=None, group_by="endpoint")
+    myapp_extensions.metrics = GunicornInternalPrometheusMetrics.for_app_factory(group_by="endpoint")
     ctx = app.app_context()
     ctx.push()
     yield app

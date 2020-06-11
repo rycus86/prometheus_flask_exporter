@@ -174,15 +174,31 @@ class PrometheusMetrics(object):
         if app is not None:
             self.init_app(app)
 
+    @classmethod
+    def for_app_factory(cls, **kwargs):
+        """
+        A convenience method to create a new instance that is
+        suitable for Flask "app factory" configurations. Please
+        see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
+
+        Note, that you will need to call `init_app(...)` later
+        with the Flask application as its parameter.
+
+        This method takes the same keyword arguments as the
+        default constructor.
+        """
+
+        return cls(app=None, **kwargs)
+
     def init_app(self, app):
         """
         This callback can be used to initialize an application for the
         use with this prometheus reporter setup.
 
-        This is usually used with a flask "app factory" configuration. Please
+        This is usually used with a Flask "app factory" configuration. Please
         see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
 
-        Note, that you need to use `PrometheusMetrics(app=None, ...)`
+        Note, that you need to use `PrometheusMetrics.for_app_factory()`
         for this mode, otherwise it is called automatically.
 
         :param app: the Flask application

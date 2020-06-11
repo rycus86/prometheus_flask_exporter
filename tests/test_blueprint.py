@@ -17,7 +17,7 @@ class BlueprintTest(unittest.TestCase):
             self.assertNotRegex = self.assertNotRegexpMatches
 
         registry = CollectorRegistry(auto_describe=True)
-        self.metrics = PrometheusMetrics(app=None, registry=registry)
+        self.metrics = PrometheusMetrics.for_app_factory(registry=registry)
 
     def test_blueprint(self):
         blueprint = Blueprint('test-blueprint', __name__)

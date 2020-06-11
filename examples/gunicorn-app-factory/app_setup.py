@@ -1,7 +1,7 @@
 from flask import Flask
 from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 
-metrics = GunicornInternalPrometheusMetrics(app=None)
+metrics = GunicornInternalPrometheusMetrics.for_app_factory()
 
 
 def create_app():
