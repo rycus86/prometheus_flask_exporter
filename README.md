@@ -69,7 +69,7 @@ The following metrics are exported by default
   Information about the Prometheus Flask exporter itself (e.g. `version`).
 
 The prefix for the default metrics can be controlled by the `defaults_prefix` parameter.
-Is you don't want to use any prefix, pass the `prometheus_flask_exporter.NO_PREFIX` value in.
+If you don't want to use any prefix, pass the `prometheus_flask_exporter.NO_PREFIX` value in.
 
 To register your own *default* metrics that will track all registered
 Flask view functions, use the `register_default` function.
