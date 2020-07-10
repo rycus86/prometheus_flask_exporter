@@ -104,8 +104,8 @@ class PrometheusMetrics(object):
 
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
-                 group_by='path', buckets=None, static_labels=None,
-                 response_converter=None,
+                 group_by='path', buckets=None,
+                 default_labels=None, response_converter=None,
                  excluded_paths=None, registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
@@ -123,7 +123,7 @@ class PrometheusMetrics(object):
             (defaults to `path`)
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
-        :param static_labels: static labels to attach to each of the
+        :param default_labels: default labels to attach to each of the
             metrics exposed by this `PrometheusMetrics` instance
         :param response_converter: a function that converts the captured
             the produced response object to a Flask friendly representation
@@ -136,7 +136,7 @@ class PrometheusMetrics(object):
         self.path = path
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
-        self._static_labels = static_labels or {}
+        self._default_labels = default_labels or {}
         self._response_converter = response_converter or make_response
         self.buckets = buckets
         self.version = __version__
@@ -149,6 +149,17 @@ class PrometheusMetrics(object):
             # see https://github.com/rycus86/prometheus_flask_exporter/pull/20
             from prometheus_client import REGISTRY as DEFAULT_REGISTRY
             self.registry = DEFAULT_REGISTRY
+
+        if kwargs.get('static_labels'):
+            warnings.warn(
+                'The `static_labels` argument of `PrometheusMetrics` is '
+                'deprecated since 0.15.0, please use the '
+                'new `default_labels` argument.', DeprecationWarning
+            )
+
+            for key, value in kwargs.get('static_labels', dict()).items():
+                if key not in self._default_labels:
+                    self._default_labels[key] = value
 
         if kwargs.get('group_by_endpoint') is True:
             warnings.warn(
@@ -331,12 +342,12 @@ class PrometheusMetrics(object):
         else:
             prefix = prefix + "_"
 
-        additional_labels = self._static_labels.items()
+        labels = self._get_combined_labels(None)
 
         histogram = Histogram(
             '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
-            ('method', duration_group_name, 'status') + tuple(map(lambda kv: kv[0], additional_labels)),
+            ('method', duration_group_name, 'status') + labels.keys(),
             registry=self.registry,
             **buckets_as_kwargs
         )
@@ -344,14 +355,14 @@ class PrometheusMetrics(object):
         counter = Counter(
             '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
-            ('method', 'status') + tuple(map(lambda kv: kv[0], additional_labels)),
+            ('method', 'status') + labels.keys(),
             registry=self.registry
         )
 
         self.info(
             '%sexporter_info' % prefix,
             'Information about the Prometheus Flask exporter',
-            version=self.version, **self._static_labels
+            version=self.version
         )
 
         def before_request():
@@ -373,14 +384,18 @@ class PrometheusMetrics(object):
                 else:
                     group = getattr(request, duration_group)
 
-                histogram.labels(
-                    request.method, group, _to_status_code(response.status_code),
-                    *map(lambda kv: kv[1], additional_labels)
-                ).observe(total_time)
+                histogram_labels = {
+                    'method': request.method,
+                    'status': _to_status_code(response.status_code),
+                    duration_group_name: group
+                }
+                histogram_labels.update(labels.values_for(response))
+
+                histogram.labels(**histogram_labels).observe(total_time)
 
             counter.labels(
-                request.method, _to_status_code(response.status_code),
-                *map(lambda kv: kv[1], additional_labels)
+                method=request.method, status=_to_status_code(response.status_code),
+                **labels.values_for(response)
             ).inc()
 
             return response
@@ -393,6 +408,8 @@ class PrometheusMetrics(object):
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return
 
+            response = make_response('Exception: %s' % exception, 500)
+
             if hasattr(request, 'prom_start_time'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
 
@@ -401,14 +418,18 @@ class PrometheusMetrics(object):
                 else:
                     group = getattr(request, duration_group)
 
-                histogram.labels(
-                    request.method, group, 500,
-                    *map(lambda kv: kv[1], additional_labels)
-                ).observe(total_time)
+                histogram_labels = {
+                    'method': request.method,
+                    'status': 500,
+                    duration_group_name: group
+                }
+                histogram_labels.update(labels.values_for(response))
+
+                histogram.labels(**histogram_labels).observe(total_time)
 
             counter.labels(
-                request.method, 500,
-                *map(lambda kv: kv[1], additional_labels)
+                method=request.method, status=500,
+                **labels.values_for(response)
             ).inc()
 
             return
@@ -539,46 +560,16 @@ class PrometheusMetrics(object):
         if labels is not None and not isinstance(labels, dict):
             raise TypeError('labels needs to be a dictionary of {labelname: callable}')
 
-        if self._static_labels:
-            if not labels:
-                labels = self._static_labels
-            else:
-                # merge the default labels and the specific ones for this metric
-                combined = dict()
-                combined.update(self._static_labels)
-                combined.update(labels)
-                labels = combined
+        labels = self._get_combined_labels(labels)
 
-        label_names = labels.keys() if labels else tuple()
         parent_metric = metric_type(
-            name, description, labelnames=label_names, registry=registry,
+            name, description, labelnames=labels.keys(), registry=registry,
             **metric_kwargs
         )
 
-        def argspec(func):
-            if hasattr(inspect, 'getfullargspec'):
-                return inspect.getfullargspec(func)
-            else:
-                return inspect.getargspec(func)
-
-        def label_value(f):
-            if not callable(f):
-                return lambda x: f
-            if argspec(f).args:
-                return lambda x: f(x)
-            else:
-                return lambda x: f()
-
-        label_generator = tuple(
-            (key, label_value(call))
-            for key, call in labels.items()
-        ) if labels else tuple()
-
         def get_metric(response):
-            if label_names:
-                return parent_metric.labels(
-                    **{key: call(response) for key, call in label_generator}
-                )
+            if labels.has_keys():
+                return parent_metric.labels(**labels.values_for(response))
             else:
                 return parent_metric
 
@@ -653,6 +644,52 @@ class PrometheusMetrics(object):
             return func
 
         return decorator
+
+    def _get_combined_labels(self, labels):
+        """
+        Combines the given labels with static and default labels
+        and wraps them into an object that can efficiently return
+        the keys and values of these combined labels.
+        """
+
+        labels = labels.copy() if labels else dict()
+
+        if self._default_labels:
+            labels.update(self._default_labels.copy())
+
+        def argspec(func):
+            if hasattr(inspect, 'getfullargspec'):
+                return inspect.getfullargspec(func)
+            else:
+                return inspect.getargspec(func)
+
+        def label_value(f):
+            if not callable(f):
+                return lambda x: f
+            if argspec(f).args:
+                return lambda x: f(x)
+            else:
+                return lambda x: f()
+
+        class CombinedLabels(object):
+            def __init__(self, _labels):
+                self.labels = _labels.items()
+
+            def keys(self):
+                return tuple(map(lambda k: k[0], self.labels))
+
+            def has_keys(self):
+                return len(self.labels) > 0
+
+            def values_for(self, response):
+                label_generator = tuple(
+                    (key, label_value(call))
+                    for key, call in self.labels
+                ) if labels else tuple()
+
+                return {key: value(response) for key, value in label_generator}
+
+        return CombinedLabels(labels)
 
     @staticmethod
     def do_not_track():
