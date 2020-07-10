@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import re
 import sys
@@ -623,6 +624,15 @@ class PrometheusMetrics(object):
                                 view_func = view_func.__wrapped__
                             except AttributeError:
                                 break
+
+                        # Breaks dataclass/list of dataclass down to dict/dicts.
+                        if dataclasses.is_dataclass(response):
+                            response = dataclasses.asdict(response[0]), 200
+                        if isinstance(response, tuple):
+                            if dataclasses.is_dataclass(response[0]):
+                                response = dataclasses.asdict(response[0]), response[1]
+                            elif isinstance(response[0], list) and dataclasses.is_dataclass(response[0][0]):
+                                response = [dataclasses.asdict(x) for x in response[0]], response[1]
 
                         if view_func == f:
                             # we are in a request handler method
