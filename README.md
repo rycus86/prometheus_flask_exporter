@@ -363,6 +363,29 @@ metrics = ConnexionPrometheusMetrics(app, export_defaults=None)
 See a working sample app in the `examples` folder, and also the
 [prometheus_flask_exporter#61](https://github.com/rycus86/prometheus_flask_exporter/issues/61) issue. 
 
+## Flask-RESTful integration
+
+The [Flask-RESTful library](https://flask-restful.readthedocs.io/) has
+some custom response handling logic, which can be helpful in some cases.
+For example, returning `None` would fail on plain Flask, but it
+works on Flask-RESTful.
+To ease the integration, you can use `RESTfulPrometheusMetrics` in
+place of `PrometheusMetrics` that sets the `response_converter` to use
+the Flask-RESTful `API` response utilities.
+
+```python
+from flask import Flask
+from flask_restful import Api
+from prometheus_flask_exporter import RESTfulPrometheusMetrics
+
+app = Flask(__name__)
+restful_api = Api(app)
+metrics = RESTfulPrometheusMetrics(app, restful_api)
+```
+
+See a working sample app in the `examples` folder, and also the
+[prometheus_flask_exporter#62](https://github.com/rycus86/prometheus_flask_exporter/issues/62) issue.
+
 ## License
 
 MIT

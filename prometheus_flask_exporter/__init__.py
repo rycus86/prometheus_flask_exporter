@@ -763,4 +763,31 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
         super().__init__(app, **kwargs)
 
 
+class RESTfulPrometheusMetrics(PrometheusMetrics):
+    """
+    Specific extension for Flask-RESTful (https://flask-restful.readthedocs.io/)
+    that makes sure API responses are converted to Flask responses.
+    """
+    def __init__(self, app, api, **kwargs):
+        """
+        Initializes a new PrometheusMetrics instance that is appropriate
+        for a Flask-RESTful application.
+
+        :param app: the Flask application
+        :param api: the Flask-RESTful API instance
+        """
+
+        if 'response_converter' not in kwargs:
+            kwargs['response_converter'] = self._create_response_converter(api)
+        super().__init__(app, **kwargs)
+
+    @staticmethod
+    def _create_response_converter(api):
+        def _make_response(response):
+            if response is None:
+                response = (None, 200)
+            return api.make_response(*response)
+        return _make_response
+
+
 __version__ = '0.14.1'

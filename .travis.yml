@@ -62,6 +62,9 @@ jobs:
     env: TEST_NAME=restful-with-blueprints
 
   - <<: *integration-stage
+    env: TEST_NAME=restful-return-none
+
+  - <<: *integration-stage
     env: TEST_NAME=restplus-default-metrics
 
   - <<: *integration-stage
