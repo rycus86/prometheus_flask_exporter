@@ -175,6 +175,14 @@ a `PrometheusMetrics` instance, using the `static_labels` argument.
 This needs to be a dictionary, where each key will become a metric
 label name, and the values their (static) values.
 
+If you use another framework over Flask (perhaps
+[Connexion](https://connexion.readthedocs.io/)) then you might return
+responses from your endpoints that Flask can't deal with by default.
+If that is the case, you might need to pass in a `response_converter`
+that takes the returned object and should convert that to a Flask
+friendly response.
+See `ConnexionPrometheusMetrics` for an example.
+
 ## Labels
 
 When defining labels for metrics on functions,
@@ -333,6 +341,27 @@ metrics.register_endpoint('/metrics')
 
 See [#31](https://github.com/rycus86/prometheus_flask_exporter/issues/31)
 for context, and please let me know if you know a better way!
+
+## Connexion integration
+
+The [Connexion](https://connexion.readthedocs.io/) library has some
+support to automatically deal with certain response types, for example
+dataclasses, which a plain Flask application would not accept.
+To ease the integration, you can use `ConnexionPrometheusMetrics` in
+place of `PrometheusMetrics` that has the `response_converter` set
+appropriately to be able to deal with whatever Connexion supports for
+Flask integrations.
+
+```python
+import connexion
+from prometheus_flask_exporter import ConnexionPrometheusMetrics
+
+app = connexion.App(__name__)
+metrics = ConnexionPrometheusMetrics(app, export_defaults=None)
+```
+
+See a working sample app in the `examples` folder, and also the
+[prometheus_flask_exporter#61](https://github.com/rycus86/prometheus_flask_exporter/issues/61) issue. 
 
 ## License
 

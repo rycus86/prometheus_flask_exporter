@@ -56,6 +56,9 @@ jobs:
     env: TEST_NAME=wsgi
 
   - <<: *integration-stage
+    env: TEST_NAME=connexion-pydantic
+
+  - <<: *integration-stage
     env: TEST_NAME=restful-with-blueprints
 
   - <<: *integration-stage

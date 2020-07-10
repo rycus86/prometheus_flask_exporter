@@ -105,6 +105,7 @@ class PrometheusMetrics(object):
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None, static_labels=None,
+                 response_converter=None,
                  excluded_paths=None, registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
@@ -124,6 +125,8 @@ class PrometheusMetrics(object):
             (will use the default when `None`)
         :param static_labels: static labels to attach to each of the
             metrics exposed by this `PrometheusMetrics` instance
+        :param response_converter: a function that converts the captured
+            the produced response object to a Flask friendly representation
         :param excluded_paths: regular expression(s) as a string or
             a list of strings for paths to exclude from tracking
         :param registry: the Prometheus Registry to use
@@ -134,6 +137,7 @@ class PrometheusMetrics(object):
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
         self._static_labels = static_labels or {}
+        self._response_converter = response_converter or make_response
         self.buckets = buckets
         self.version = __version__
 
@@ -626,11 +630,11 @@ class PrometheusMetrics(object):
 
                         if view_func == f:
                             # we are in a request handler method
-                            response = make_response(response)
+                            response = self._response_converter(response)
 
                         elif hasattr(view_func, 'view_class') and isinstance(view_func.view_class, MethodViewType):
                             # we are in a method view (for Flask-RESTful for example)
-                            response = make_response(response)
+                            response = self._response_converter(response)
 
                     metric = get_metric(response)
 
@@ -745,6 +749,18 @@ class PrometheusMetrics(object):
             return isinstance(value, basestring)  # python2
         except NameError:
             return isinstance(value, str)  # python3
+
+
+class ConnexionPrometheusMetrics(PrometheusMetrics):
+    """
+    Specific extension for Connexion (https://connexion.readthedocs.io/)
+    that makes sure responses are converted to Flask responses.
+    """
+    def __init__(self, app, **kwargs):
+        from connexion.apis.flask_api import FlaskApi
+        if 'response_converter' not in kwargs:
+            kwargs['response_converter'] = FlaskApi.get_response
+        super().__init__(app, **kwargs)
 
 
 __version__ = '0.14.1'
