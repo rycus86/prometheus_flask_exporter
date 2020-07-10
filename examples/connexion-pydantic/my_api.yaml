@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Test
+
+paths:
+  /test:
+    get:
+      operationId: endpoint.test
+      responses:
+        '200':
+          description: Test

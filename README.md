@@ -170,10 +170,23 @@ Similarly, the `start_http_server` allows exposing the endpoint on an
 independent Flask application on a selected HTTP port.
 It also supports overriding the endpoint's path and the HTTP listen address.
 
-You can also set static labels to add to every request managed by
-a `PrometheusMetrics` instance, using the `static_labels` argument.
+You can also set default labels to add to every request managed by
+a `PrometheusMetrics` instance, using the `default_labels` argument.
 This needs to be a dictionary, where each key will become a metric
-label name, and the values their (static) values.
+label name, and the values the label values.
+These can be constant values, or dynamic functions, see below in the
+[Labels](#Labels) section.
+
+> The `static_labels` argument is deprecated since 0.15.0,
+> please use the new `default_labels` argument.
+
+If you use another framework over Flask (perhaps
+[Connexion](https://connexion.readthedocs.io/)) then you might return
+responses from your endpoints that Flask can't deal with by default.
+If that is the case, you might need to pass in a `response_converter`
+that takes the returned object and should convert that to a Flask
+friendly response.
+See `ConnexionPrometheusMetrics` for an example.
 
 ## Labels
 
@@ -186,8 +199,6 @@ the following values are supported in the dictionary:
   as the argument
 
 Label values are evaluated within the request context.
-The `static_labels` labels are excepted from this,
-those need to be static values.
 
 ## Application information
 
@@ -333,6 +344,50 @@ metrics.register_endpoint('/metrics')
 
 See [#31](https://github.com/rycus86/prometheus_flask_exporter/issues/31)
 for context, and please let me know if you know a better way!
+
+## Connexion integration
+
+The [Connexion](https://connexion.readthedocs.io/) library has some
+support to automatically deal with certain response types, for example
+dataclasses, which a plain Flask application would not accept.
+To ease the integration, you can use `ConnexionPrometheusMetrics` in
+place of `PrometheusMetrics` that has the `response_converter` set
+appropriately to be able to deal with whatever Connexion supports for
+Flask integrations.
+
+```python
+import connexion
+from prometheus_flask_exporter import ConnexionPrometheusMetrics
+
+app = connexion.App(__name__)
+metrics = ConnexionPrometheusMetrics(app, export_defaults=None)
+```
+
+See a working sample app in the `examples` folder, and also the
+[prometheus_flask_exporter#61](https://github.com/rycus86/prometheus_flask_exporter/issues/61) issue. 
+
+## Flask-RESTful integration
+
+The [Flask-RESTful library](https://flask-restful.readthedocs.io/) has
+some custom response handling logic, which can be helpful in some cases.
+For example, returning `None` would fail on plain Flask, but it
+works on Flask-RESTful.
+To ease the integration, you can use `RESTfulPrometheusMetrics` in
+place of `PrometheusMetrics` that sets the `response_converter` to use
+the Flask-RESTful `API` response utilities.
+
+```python
+from flask import Flask
+from flask_restful import Api
+from prometheus_flask_exporter import RESTfulPrometheusMetrics
+
+app = Flask(__name__)
+restful_api = Api(app)
+metrics = RESTfulPrometheusMetrics(app, restful_api)
+```
+
+See a working sample app in the `examples` folder, and also the
+[prometheus_flask_exporter#62](https://github.com/rycus86/prometheus_flask_exporter/issues/62) issue.
 
 ## License
 

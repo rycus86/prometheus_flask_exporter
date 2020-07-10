@@ -1,7 +1,7 @@
 from unittest_helper import BaseTestCase
 
 from prometheus_flask_exporter import NO_PREFIX
-from flask import make_response
+from flask import request, make_response
 
 
 class DefaultsTest(BaseTestCase):
@@ -449,8 +449,7 @@ class DefaultsTest(BaseTestCase):
 
         self.assertMetric(
             'flask_exporter_info', '',
-            ('version', metrics.version),
-            ('app_name', 'Test-App'), ('api_version', 1)
+            ('version', metrics.version)  # no default labels here
         )
 
     def test_static_labels_without_metric_labels(self):
@@ -489,6 +488,49 @@ class DefaultsTest(BaseTestCase):
 
         self.assertMetric(
             'flask_exporter_info', '',
-            ('version', metrics.version),
-            ('app_name', 'Test-App'), ('api_version', 1)
+            ('version', metrics.version)  # no default labels here
+        )
+
+    def test_default_labels(self):
+        metrics = self.metrics(
+            static_labels={
+                'static': 'testing'
+            }, default_labels={
+                'dm': lambda: request.method
+            })
+
+        @self.app.route('/test')
+        @metrics.counter('test_counter', 'Test Counter',
+                         labels={'code': lambda r: r.status_code})
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200),
+            ('static', 'testing'), ('dm', 'GET')
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200),
+            ('static', 'testing'), ('dm', 'GET')
+        )
+
+        self.assertMetric(
+            'test_counter_total', '2.0',
+            ('code', 200),
+            ('static', 'testing'), ('dm', 'GET')
+        )
+        self.assertMetric(
+            'test_counter_created', '.',
+            ('code', 200),
+            ('static', 'testing'), ('dm', 'GET')
+        )
+
+        self.assertMetric(
+            'flask_exporter_info', '',
+            ('version', metrics.version)  # no default labels here
         )
