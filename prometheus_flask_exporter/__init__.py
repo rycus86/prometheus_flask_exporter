@@ -626,7 +626,7 @@ class PrometheusMetrics(object):
                             # we are in a request handler method
                             response = self._response_converter(response)
 
-                        elif f and isinstance(view_func.view_class, MethodViewType):
+                        elif hasattr(view_func, 'view_class') and isinstance(view_func.view_class, MethodViewType):
                             # we are in a method view (for Flask-RESTful for example)
                             response = self._response_converter(response)
 
@@ -870,4 +870,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.15.2'
+__version__ = '0.15.3'
