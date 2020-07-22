@@ -10,3 +10,13 @@ paths:
       responses:
         '200':
           description: Test
+  /plain:
+    get:
+      operationId: endpoint.plain
+      responses:
+        '200':
+          description: Plain
+          content:
+            text/plain:
+              schema:
+                type: string

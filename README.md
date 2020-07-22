@@ -360,11 +360,26 @@ import connexion
 from prometheus_flask_exporter import ConnexionPrometheusMetrics
 
 app = connexion.App(__name__)
-metrics = ConnexionPrometheusMetrics(app, export_defaults=None)
+metrics = ConnexionPrometheusMetrics(app)
 ```
 
 See a working sample app in the `examples` folder, and also the
 [prometheus_flask_exporter#61](https://github.com/rycus86/prometheus_flask_exporter/issues/61) issue. 
+
+There's a caveat about this integration, where any endpoints that
+do not return JSON responses need to be decorated with
+`@metrics.content_type('...')` as this integration would force them
+to be `application/json` otherwise.
+
+```python
+metrics = ConnexionPrometheusMetrics(app)
+
+@metrics.content_type('text/plain')
+def plain_response():
+    return 'plain text'
+```
+
+See the [prometheus_flask_exporter#64](https://github.com/rycus86/prometheus_flask_exporter/issues/64) issue for more details.
 
 ## Flask-RESTful integration
 

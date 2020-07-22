@@ -2,7 +2,7 @@ import connexion
 from prometheus_flask_exporter import ConnexionPrometheusMetrics
 
 app = connexion.App(__name__)
-metrics = ConnexionPrometheusMetrics(app, export_defaults=None)
+metrics = ConnexionPrometheusMetrics(app)
 
 
 if __name__ == '__main__':

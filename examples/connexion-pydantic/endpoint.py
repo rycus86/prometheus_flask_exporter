@@ -12,3 +12,9 @@ class Info:
 })
 def test() -> Info:
     return Info('Test version')
+
+
+@metrics.content_type('text/plain')
+@metrics.counter('test_plain', 'Counter for plain responses')
+def plain() -> str:
+    return 'Test plain response'

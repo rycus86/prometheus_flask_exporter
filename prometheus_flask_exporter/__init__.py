@@ -342,6 +342,15 @@ class PrometheusMetrics(object):
         else:
             prefix = prefix + "_"
 
+        try:
+            self.info(
+                '%sexporter_info' % prefix,
+                'Information about the Prometheus Flask exporter',
+                version=self.version
+            )
+        except ValueError:
+            return  # looks like we have already exported the default metrics
+
         labels = self._get_combined_labels(None)
 
         histogram = Histogram(
@@ -357,12 +366,6 @@ class PrometheusMetrics(object):
             'Total number of HTTP requests',
             ('method', 'status') + labels.keys(),
             registry=self.registry
-        )
-
-        self.info(
-            '%sexporter_info' % prefix,
-            'Information about the Prometheus Flask exporter',
-            version=self.version
         )
 
         def before_request():
@@ -623,7 +626,7 @@ class PrometheusMetrics(object):
                             # we are in a request handler method
                             response = self._response_converter(response)
 
-                        elif hasattr(view_func, 'view_class') and isinstance(view_func.view_class, MethodViewType):
+                        elif f and isinstance(view_func.view_class, MethodViewType):
                             # we are in a method view (for Flask-RESTful for example)
                             response = self._response_converter(response)
 
@@ -793,11 +796,42 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
     Specific extension for Connexion (https://connexion.readthedocs.io/)
     that makes sure responses are converted to Flask responses.
     """
-    def __init__(self, app, **kwargs):
-        from connexion.apis.flask_api import FlaskApi
+    def __init__(self, app, default_mimetype='application/json', **kwargs):
+        flask_app = app.app if app else None
         if 'response_converter' not in kwargs:
-            kwargs['response_converter'] = FlaskApi.get_response
-        super().__init__(app, **kwargs)
+            kwargs['response_converter'] = self._create_response_converter(default_mimetype)
+
+        super().__init__(flask_app, **kwargs)
+
+    @staticmethod
+    def contNent_type(content_type):
+        """
+        Force the content type of the response,
+        which would be otherwise overwritten by the metrics conversion
+        to application/json.
+
+        :param content_type: the value to send in the
+          Content-Type response header
+        """
+
+        def decorator(f):
+            @wraps(f)
+            def func(*args, **kwargs):
+                request.prom_connexion_content_type = content_type
+                return f(*args, **kwargs)
+            return func
+        return decorator
+
+    @staticmethod
+    def _create_response_converter(default_mimetype):
+        from connexion.apis.flask_api import FlaskApi
+
+        def _make_response(response):
+            mimetype = default_mimetype
+            if hasattr(request, 'prom_connexion_content_type'):
+                mimetype = request.prom_connexion_content_type
+            return FlaskApi.get_response(response, mimetype=mimetype)
+        return _make_response
 
 
 class RESTfulPrometheusMetrics(PrometheusMetrics):
@@ -814,13 +848,18 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         :param api: the Flask-RESTful API instance
         """
 
-        if 'response_converter' not in kwargs:
+        if api and 'response_converter' not in kwargs:
             kwargs['response_converter'] = self._create_response_converter(api)
         super().__init__(app, **kwargs)
 
     @classmethod
-    def for_app_factory(cls, api, **kwargs):
+    def for_app_factory(cls, api=None, **kwargs):
         return cls(app=None, api=api, **kwargs)
+
+    def init_app(self, app, api=None):
+        if api:
+            self._response_converter = self._create_response_converter(api)
+        return super().init_app(app)
 
     @staticmethod
     def _create_response_converter(api):
