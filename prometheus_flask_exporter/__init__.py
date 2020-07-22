@@ -804,7 +804,7 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
         super().__init__(flask_app, **kwargs)
 
     @staticmethod
-    def contNent_type(content_type):
+    def content_type(content_type):
         """
         Force the content type of the response,
         which would be otherwise overwritten by the metrics conversion
@@ -870,4 +870,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.15.3'
+__version__ = '0.15.4'
