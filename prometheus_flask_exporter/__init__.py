@@ -818,6 +818,10 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
             kwargs['response_converter'] = self._create_response_converter(api)
         super().__init__(app, **kwargs)
 
+    @classmethod
+    def for_app_factory(cls, api, **kwargs):
+        return cls(app=None, api=api, **kwargs)
+
     @staticmethod
     def _create_response_converter(api):
         def _make_response(response):

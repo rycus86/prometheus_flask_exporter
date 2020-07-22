@@ -5,7 +5,7 @@ from prometheus_flask_exporter import RESTfulPrometheusMetrics
 app = Flask(__name__)
 restful_api = Api(app)
 
-metrics = RESTfulPrometheusMetrics(app, restful_api)
+metrics = RESTfulPrometheusMetrics.for_app_factory(restful_api)
 
 
 class Test(Resource):
@@ -26,4 +26,5 @@ restful_api.add_resource(Test, '/api/v1/test', endpoint='test')
 
 
 if __name__ == '__main__':
+    metrics.init_app(app)
     app.run('0.0.0.0', 4000)
