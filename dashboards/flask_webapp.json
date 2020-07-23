@@ -48,7 +48,7 @@
       }
     ]
   },
-  "description": "Simple dashboard to show how to monitor flask app using prometheus_flask_exporter ",
+  "description": "Example dashboard for monitoring Flask webapps using prometheus_flask_exporter",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
