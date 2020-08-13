@@ -372,7 +372,7 @@ class PrometheusMetrics(object):
         request_exceptions_metric = Counter(
             '%shttp_request_exceptions_total' % prefix,
             'Total number of HTTP requests',
-            ('method', request.path, 'status') + labels.keys(),
+            ('method', 'path', 'status') + labels.keys(),
             registry=self.registry
         )
 
@@ -429,7 +429,7 @@ class PrometheusMetrics(object):
             request_exceptions_labels = {
                 'method': request.method,
                 'status': 500,
-                duration_group_name: group
+                'path': request.path,
             }
             request_exceptions_labels.update(labels.values_for(response))
             request_exceptions_metric.labels(**request_exceptions_labels).inc()
