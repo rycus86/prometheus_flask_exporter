@@ -293,6 +293,7 @@ class PrometheusMetrics(object):
         """
         Export the default metrics:
             - HTTP request latencies
+            - HTTP request exceptions
             - Number of HTTP requests
 
         :param buckets: the time buckets for request latencies
@@ -353,7 +354,7 @@ class PrometheusMetrics(object):
 
         labels = self._get_combined_labels(None)
 
-        histogram = Histogram(
+        request_duration_metric = Histogram(
             '%shttp_request_duration_seconds' % prefix,
             'Flask HTTP request duration in seconds',
             ('method', duration_group_name, 'status') + labels.keys(),
@@ -361,10 +362,18 @@ class PrometheusMetrics(object):
             **buckets_as_kwargs
         )
 
-        counter = Counter(
+        counter_labels = ('method', 'status') + labels.keys()
+        request_total_metric = Counter(
             '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
-            ('method', 'status') + labels.keys(),
+            counter_labels,
+            registry=self.registry
+        )
+
+        request_exceptions_metric = Counter(
+            '%shttp_request_exceptions_total' % prefix,
+            'Total number of HTTP requests which resulted in an exception',
+            counter_labels,
             registry=self.registry
         )
 
@@ -387,16 +396,16 @@ class PrometheusMetrics(object):
                 else:
                     group = getattr(request, duration_group)
 
-                histogram_labels = {
+                request_duration_labels = {
                     'method': request.method,
                     'status': _to_status_code(response.status_code),
                     duration_group_name: group
                 }
-                histogram_labels.update(labels.values_for(response))
+                request_duration_labels.update(labels.values_for(response))
 
-                histogram.labels(**histogram_labels).observe(total_time)
+                request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
-            counter.labels(
+            request_total_metric.labels(
                 method=request.method, status=_to_status_code(response.status_code),
                 **labels.values_for(response)
             ).inc()
@@ -411,26 +420,40 @@ class PrometheusMetrics(object):
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return
 
-            response = make_response('Exception: %s' % exception, 500)
+            # Check if the exception was raised using a response object and use
+            # its status_code if present. This will only work for ``werkzeug.exceptions.HTTPException``
+            # and subclasses thereof. Otherwise we assume it's a 500.
+            try:
+                response = exception.get_response()
+                status_code = _to_status_code(response.status_code)
+            except:
+                status_code = 500
+            finally:
+                response = make_response('Exception: %s' % exception, status_code)
+
+            if callable(duration_group):
+                group = duration_group(request)
+            else:
+                group = getattr(request, duration_group)
+
+            request_exceptions_metric.labels(
+                method=request.method, status=status_code,
+                **labels.values_for(response)
+            ).inc()
 
             if hasattr(request, 'prom_start_time'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
 
-                if callable(duration_group):
-                    group = duration_group(request)
-                else:
-                    group = getattr(request, duration_group)
-
-                histogram_labels = {
+                request_duration_labels = {
                     'method': request.method,
-                    'status': 500,
+                    'status': status_code,
                     duration_group_name: group
                 }
-                histogram_labels.update(labels.values_for(response))
+                request_duration_labels.update(labels.values_for(response))
 
-                histogram.labels(**histogram_labels).observe(total_time)
+                request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
-            counter.labels(
+            request_total_metric.labels(
                 method=request.method, status=500,
                 **labels.values_for(response)
             ).inc()

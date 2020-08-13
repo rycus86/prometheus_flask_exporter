@@ -1,7 +1,7 @@
 from unittest_helper import BaseTestCase
 
 from prometheus_flask_exporter import NO_PREFIX
-from flask import request, make_response
+from flask import request, make_response, abort
 
 
 class DefaultsTest(BaseTestCase):
@@ -52,7 +52,10 @@ class DefaultsTest(BaseTestCase):
             'flask_http_request_duration_seconds_bucket', '2.0',
             ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
-
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/skip/defaults'), ('status', 200)
+        )
         self.client.get('/test')
 
         self.assertMetric(
@@ -109,6 +112,33 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/skip'), ('status', 200)
         )
 
+    def test_exception_counter_metric(self):
+        metrics = self.metrics()
+
+        @self.app.route('/error')
+        def test():
+            raise AttributeError
+
+        try:
+            self.client.get('/error')
+        except AttributeError:
+            pass
+
+        self.assertMetric(
+            'flask_http_request_exceptions_total', '1.0',
+            ('method', 'GET'), ('path', '/error'), ('status', 500)
+        )
+
+        try:
+            self.client.get('/error')
+        except AttributeError:
+            pass
+
+        self.assertMetric(
+            'flask_http_request_exceptions_total', '2.0',
+            ('method', 'GET'), ('path', '/error'), ('status', 500)
+        )
+
     def test_do_not_track_only_excludes_defaults(self):
         metrics = self.metrics()
 
@@ -129,6 +159,10 @@ class DefaultsTest(BaseTestCase):
         self.assertAbsent(
             'flask_http_request_duration_seconds_count',
             ('method', 'GET'), ('path', '/skip/defaults'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/skip/defaults'),
         )
 
         self.assertMetric('cnt_before_total', 2.0)
@@ -178,6 +212,11 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'), ('status', 200),
             endpoint='/my-metrics'
         )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
+            endpoint='/my-metrics'
+        )
 
     def test_no_default_export(self):
         self.metrics(export_defaults=False)
@@ -195,6 +234,11 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertAbsent(
             'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('path', '/test'), ('status', 200),
+            endpoint='/metrics'
+        )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
             ('method', 'GET'), ('path', '/test'), ('status', 200),
             endpoint='/metrics'
         )
@@ -291,7 +335,10 @@ class DefaultsTest(BaseTestCase):
             'late_http_request_total',
             ('method', 'GET'), ('status', 200)
         )
-
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
+        )
         metrics.export_defaults(prefix='late')
 
         self.assertMetric(
@@ -310,6 +357,10 @@ class DefaultsTest(BaseTestCase):
         self.assertMetric(
             'late_http_request_duration_seconds_count', '3.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
         )
 
     def test_non_automatic_endpoint_registration(self):
