@@ -438,6 +438,7 @@ class PrometheusMetrics(object):
                 duration_group_name: group,
             }
             request_exceptions_labels.update(labels.values_for(response))
+
             request_exceptions_metric.labels(**request_exceptions_labels).inc()
 
             if hasattr(request, 'prom_start_time'):
