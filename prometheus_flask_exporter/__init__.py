@@ -427,7 +427,8 @@ class PrometheusMetrics(object):
                 group = getattr(request, duration_group)
 
             # Check if the exception was raised using a response object and use
-            # its status_code if present. Otherwise assume it's a 500.
+            # its status_code if present. This will only work for ``werkzeug.exceptions.HTTPException``
+            # and subclasses thereof. Otherwise we assume it's a 500.
             try:
                 response = exception.get_response()
                 status_code = _to_status_code(response.status_code)
