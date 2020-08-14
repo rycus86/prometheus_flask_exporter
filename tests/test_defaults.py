@@ -4,7 +4,6 @@ from prometheus_flask_exporter import NO_PREFIX
 from flask import request, make_response, abort
 
 
-
 class DefaultsTest(BaseTestCase):
     def test_simple(self):
         metrics = self.metrics()
@@ -115,8 +114,6 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_exception_counter_metric(self):
-        self.metrics(export_defaults=False)
-
         @self.app.route('/error')
         def test():
             abort(501)
