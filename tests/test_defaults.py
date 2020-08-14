@@ -52,11 +52,10 @@ class DefaultsTest(BaseTestCase):
             'flask_http_request_duration_seconds_bucket', '2.0',
             ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
-        self.assertMetric(
-            'flask_http_request_exceptions_total', '0.0',
-            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/skip/defaults'), ('status', 200)
         )
-
         self.client.get('/test')
 
         self.assertMetric(
@@ -163,7 +162,7 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertAbsent(
             'flask_http_request_exceptions_total',
-            ('method', 'GET'), ('path', '/skip/defaults'), ('status', 200)
+            ('method', 'GET'), ('path', '/skip/defaults'),
         )
 
         self.assertMetric('cnt_before_total', 2.0)
@@ -213,9 +212,9 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'), ('status', 200),
             endpoint='/my-metrics'
         )
-        self.assertMetric(
-            'flask_http_request_exceptions_total', '0.0',
-            ('method', 'GET'), ('path', '/test'), ('status', 200),
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
             endpoint='/my-metrics'
         )
 
@@ -336,7 +335,10 @@ class DefaultsTest(BaseTestCase):
             'late_http_request_total',
             ('method', 'GET'), ('status', 200)
         )
-
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
+        )
         metrics.export_defaults(prefix='late')
 
         self.assertMetric(
@@ -356,9 +358,9 @@ class DefaultsTest(BaseTestCase):
             'late_http_request_duration_seconds_count', '3.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
-        self.assertMetric(
-            'late_http_request_exceptions_total', '0.0',
-            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
         )
 
     def test_non_automatic_endpoint_registration(self):
