@@ -371,8 +371,8 @@ class PrometheusMetrics(object):
 
         request_exceptions_metric = Counter(
             '%shttp_request_exceptions_total' % prefix,
-            'Total number of HTTP requests',
-            ('method', duration_group_name, 'status') + labels.keys(),
+            'Total number of HTTP requests which resulted in an exception',
+            ('method', 'status') + labels.keys(),
             registry=self.registry
         )
 
@@ -435,14 +435,10 @@ class PrometheusMetrics(object):
             except:
                 status_code = 500
 
-            request_exceptions_labels = {
-                'method': request.method,
-                'status': status_code,
-                duration_group_name: group,
-            }
-            request_exceptions_labels.update(labels.values_for(response))
-
-            request_exceptions_metric.labels(**request_exceptions_labels).inc()
+            request_exceptions_metric.labels(
+                method=request.method, status=status_code,
+                **labels.values_for(response)
+            ).inc()
 
             if hasattr(request, 'prom_start_time'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
