@@ -118,21 +118,26 @@ class DefaultsTest(BaseTestCase):
 
         @self.app.route('/error')
         def test():
-            abort(501)
+            raise AttributeError
 
-        self.client.get('/error')
+        try:
+            self.client.get('/error')
+        except AttributeError:
+            pass
 
         self.assertMetric(
             'flask_http_request_exceptions_total', '1.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 501)
+            ('method', 'GET'), ('path', '/error'), ('status', 500)
         )
 
-        self.client.get('/error')
-        self.client.get('/error')
+        try:
+            self.client.get('/error')
+        except AttributeError:
+            pass
 
         self.assertMetric(
-            'flask_http_request_exceptions_total', '3.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 501)
+            'flask_http_request_exceptions_total', '2.0',
+            ('method', 'GET'), ('path', '/error'), ('status', 500)
         )
 
     def test_do_not_track_only_excludes_defaults(self):

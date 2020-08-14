@@ -420,13 +420,6 @@ class PrometheusMetrics(object):
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return
 
-            response = make_response('Exception: %s' % exception, 500)
-
-            if callable(duration_group):
-                group = duration_group(request)
-            else:
-                group = getattr(request, duration_group)
-
             # Check if the exception was raised using a response object and use
             # its status_code if present. This will only work for ``werkzeug.exceptions.HTTPException``
             # and subclasses thereof. Otherwise we assume it's a 500.
@@ -435,6 +428,13 @@ class PrometheusMetrics(object):
                 status_code = _to_status_code(response.status_code)
             except:
                 status_code = 500
+            finally:
+                response = make_response('Exception: %s' % exception, status_code)
+
+            if callable(duration_group):
+                group = duration_group(request)
+            else:
+                group = getattr(request, duration_group)
 
             request_exceptions_metric.labels(
                 method=request.method, status=status_code,
