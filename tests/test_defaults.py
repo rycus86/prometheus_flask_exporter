@@ -1,7 +1,7 @@
 from unittest_helper import BaseTestCase
 
 from prometheus_flask_exporter import NO_PREFIX
-from flask import request, make_response
+from flask import request, make_response, abort
 
 
 
@@ -119,13 +119,13 @@ class DefaultsTest(BaseTestCase):
 
         @self.app.route('/error')
         def test():
-            raise AttributeError
+            abort(501)
 
         self.client.get('/error')
 
         self.assertMetric(
             'flask_http_request_exceptions_total', '1.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 200)
+            ('method', 'GET'), ('path', '/error'), ('status', 501)
         )
 
         self.client.get('/error')
@@ -133,7 +133,7 @@ class DefaultsTest(BaseTestCase):
 
         self.assertMetric(
             'flask_http_request_exceptions_total', '3.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 200)
+            ('method', 'GET'), ('path', '/error'), ('status', 501)
         )
 
     def test_do_not_track_only_excludes_defaults(self):
