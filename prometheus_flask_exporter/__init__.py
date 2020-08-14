@@ -449,7 +449,7 @@ class PrometheusMetrics(object):
 
                 request_duration_labels = {
                     'method': request.method,
-                    'status': 500,
+                    'status': status_code,
                     duration_group_name: group
                 }
                 request_duration_labels.update(labels.values_for(response))

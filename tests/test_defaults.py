@@ -54,7 +54,7 @@ class DefaultsTest(BaseTestCase):
             ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
         self.assertMetric(
-            'flask_http_request_exceptions', '0.0',
+            'flask_http_request_exceptions_total', '0.0',
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
@@ -119,12 +119,12 @@ class DefaultsTest(BaseTestCase):
 
         @self.app.route('/error')
         def test():
-            raise RuntimeError
+            raise AttributeError
 
         self.client.get('/error')
 
         self.assertMetric(
-            'flask_http_request_exceptions', '0.0',
+            'flask_http_request_exceptions_total', '1.0',
             ('method', 'GET'), ('path', '/error'), ('status', 200)
         )
 
@@ -132,7 +132,7 @@ class DefaultsTest(BaseTestCase):
         self.client.get('/error')
 
         self.assertMetric(
-            'flask_http_request_exceptions', '3.0',
+            'flask_http_request_exceptions_total', '3.0',
             ('method', 'GET'), ('path', '/error'), ('status', 200)
         )
 
