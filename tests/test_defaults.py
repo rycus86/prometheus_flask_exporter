@@ -114,6 +114,8 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_exception_counter_metric(self):
+        metrics = self.metrics()
+
         @self.app.route('/error')
         def test():
             abort(501)
