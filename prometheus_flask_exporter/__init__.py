@@ -362,17 +362,18 @@ class PrometheusMetrics(object):
             **buckets_as_kwargs
         )
 
+        counter_labels = ('method', 'status') + labels.keys()
         request_total_metric = Counter(
             '%shttp_request_total' % prefix,
             'Total number of HTTP requests',
-            ('method', 'status') + labels.keys(),
+            counter_labels,
             registry=self.registry
         )
 
         request_exceptions_metric = Counter(
             '%shttp_request_exceptions_total' % prefix,
             'Total number of HTTP requests which resulted in an exception',
-            ('method', 'status') + labels.keys(),
+            counter_labels,
             registry=self.registry
         )
 
