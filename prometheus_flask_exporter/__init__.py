@@ -432,7 +432,7 @@ class PrometheusMetrics(object):
             try:
                 response = exception.get_response()
                 status_code = _to_status_code(response.status_code)
-            except AttributeError:
+            except:
                 status_code = 500
 
             request_exceptions_labels = {
