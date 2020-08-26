@@ -1,7 +1,8 @@
 from unittest_helper import BaseTestCase
 
 from prometheus_flask_exporter import NO_PREFIX
-from flask import request, make_response, abort
+from flask import request, make_response
+from werkzeug.exceptions import Conflict
 
 
 class DefaultsTest(BaseTestCase):
@@ -113,11 +114,15 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_exception_counter_metric(self):
-        metrics = self.metrics()
+        self.metrics()
 
         @self.app.route('/error')
-        def test():
+        def test_error():
             raise AttributeError
+
+        @self.app.route('/abort')
+        def test_abort():
+            return Conflict()
 
         try:
             self.client.get('/error')
@@ -126,17 +131,34 @@ class DefaultsTest(BaseTestCase):
 
         self.assertMetric(
             'flask_http_request_exceptions_total', '1.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 500)
+            ('method', 'GET'), ('status', 500)
         )
 
-        try:
-            self.client.get('/error')
-        except AttributeError:
-            pass
+        for _ in range(3):
+            try:
+                self.client.get('/error')
+            except AttributeError:
+                pass
 
         self.assertMetric(
-            'flask_http_request_exceptions_total', '2.0',
-            ('method', 'GET'), ('path', '/error'), ('status', 500)
+            'flask_http_request_exceptions_total', '4.0',
+            ('method', 'GET'), ('status', 500)
+        )
+
+        for _ in range(5):
+            self.client.get('/abort')
+
+        self.assertMetric(
+            'flask_http_request_exceptions_total', '4.0',
+            ('method', 'GET'), ('status', 500)
+        )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('status', 409)
+        )
+        self.assertMetric(
+            'flask_http_request_total', '5.0',
+            ('method', 'GET'), ('status', 409)
         )
 
     def test_do_not_track_only_excludes_defaults(self):
