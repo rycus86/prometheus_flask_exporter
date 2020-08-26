@@ -385,6 +385,48 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'),
         )
 
+    def test_export_latencies_as_summary(self):
+        metrics = self.metrics(export_defaults=False)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_sum',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_count',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_bucket',
+            ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
+        metrics.export_defaults(latency_as_histogram=False)
+
+        self.client.get('/test')
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_sum', '[0-9.e-]+',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '3.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_bucket',
+            ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
     def test_non_automatic_endpoint_registration(self):
         metrics = self.metrics(path=None)
 
@@ -405,6 +447,25 @@ class DefaultsTest(BaseTestCase):
             'flask_http_request_total', '2.0',
             ('method', 'GET'), ('status', 200),
             endpoint='/manual/metrics'
+        )
+
+    def test_latencies_as_summary(self):
+        self.metrics(default_latency_as_histogram=False)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_sum', '[0-9.e-]+',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
     def test_custom_buckets(self):

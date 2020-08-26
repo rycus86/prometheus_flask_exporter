@@ -73,6 +73,7 @@ The following metrics are exported by default
 
 The prefix for the default metrics can be controlled by the `defaults_prefix` parameter.
 If you don't want to use any prefix, pass the `prometheus_flask_exporter.NO_PREFIX` value in.
+The buckets on the default request latency histogram can be changed by the `buckets` parameter, and if using a summary for them is more appropriate for your use case, then use the `default_latency_as_histogram=False` parameter.
 
 To register your own *default* metrics that will track all registered
 Flask view functions, use the `register_default` function.

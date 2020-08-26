@@ -105,6 +105,7 @@ class PrometheusMetrics(object):
     def __init__(self, app, path='/metrics',
                  export_defaults=True, defaults_prefix='flask',
                  group_by='path', buckets=None,
+                 default_latency_as_histogram=True,
                  default_labels=None, response_converter=None,
                  excluded_paths=None, registry=None, **kwargs):
         """
@@ -123,6 +124,8 @@ class PrometheusMetrics(object):
             (defaults to `path`)
         :param buckets: the time buckets for request latencies
             (will use the default when `None`)
+        :param default_latency_as_histogram: export request latencies
+            as a Histogram (defaults), otherwise use a Summary
         :param default_labels: default labels to attach to each of the
             metrics exposed by this `PrometheusMetrics` instance
         :param response_converter: a function that converts the captured
@@ -137,6 +140,7 @@ class PrometheusMetrics(object):
         self._export_defaults = export_defaults
         self._defaults_prefix = defaults_prefix or 'flask'
         self._default_labels = default_labels or {}
+        self._default_latency_as_histogram = default_latency_as_histogram
         self._response_converter = response_converter or make_response
         self.buckets = buckets
         self.version = __version__
@@ -224,8 +228,9 @@ class PrometheusMetrics(object):
 
         if self._export_defaults:
             self.export_defaults(
-                self.buckets, self.group_by,
-                self._defaults_prefix, app
+                buckets=self.buckets, group_by=self.group_by,
+                latency_as_histogram=self._default_latency_as_histogram,
+                prefix=self._defaults_prefix, app=app
             )
 
     def register_endpoint(self, path, app=None):
@@ -289,6 +294,7 @@ class PrometheusMetrics(object):
         thread.start()
 
     def export_defaults(self, buckets=None, group_by='path',
+                        latency_as_histogram=True,
                         prefix='flask', app=None, **kwargs):
         """
         Export the default metrics:
@@ -301,6 +307,9 @@ class PrometheusMetrics(object):
         :param group_by: group default HTTP metrics by
             this request property, like `path`, `endpoint`, `rule`, etc.
             (defaults to `path`)
+        :param latency_as_histogram: export request latencies
+            as a Histogram, otherwise use a Summary instead
+            (defaults to `True` to export as a Histogram)
         :param prefix: prefix to start the default metrics names with
             or `NO_PREFIX` (to skip prefix)
         :param app: the Flask application
@@ -311,11 +320,6 @@ class PrometheusMetrics(object):
 
         if not prefix:
             prefix = self._defaults_prefix or 'flask'
-
-        # use the default buckets from prometheus_client if not given here
-        buckets_as_kwargs = {}
-        if buckets is not None:
-            buckets_as_kwargs['buckets'] = buckets
 
         if kwargs.get('group_by_endpoint') is True:
             warnings.warn(
@@ -354,13 +358,28 @@ class PrometheusMetrics(object):
 
         labels = self._get_combined_labels(None)
 
-        request_duration_metric = Histogram(
-            '%shttp_request_duration_seconds' % prefix,
-            'Flask HTTP request duration in seconds',
-            ('method', duration_group_name, 'status') + labels.keys(),
-            registry=self.registry,
-            **buckets_as_kwargs
-        )
+        if latency_as_histogram:
+            # use the default buckets from prometheus_client if not given here
+            buckets_as_kwargs = {}
+            if buckets is not None:
+                buckets_as_kwargs['buckets'] = buckets
+
+            request_duration_metric = Histogram(
+                '%shttp_request_duration_seconds' % prefix,
+                'Flask HTTP request duration in seconds',
+                ('method', duration_group_name, 'status') + labels.keys(),
+                registry=self.registry,
+                **buckets_as_kwargs
+            )
+
+        else:
+            # export as Summary instead
+            request_duration_metric = Summary(
+                '%shttp_request_duration_seconds' % prefix,
+                'Flask HTTP request duration in seconds',
+                ('method', duration_group_name, 'status') + labels.keys(),
+                registry=self.registry
+            )
 
         counter_labels = ('method', 'status') + labels.keys()
         request_total_metric = Counter(
@@ -884,4 +903,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.15.4'
+__version__ = '0.16.0'

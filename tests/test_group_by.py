@@ -29,6 +29,29 @@ class GroupByTest(BaseTestCase):
                 endpoint='/metrics'
             )
 
+    def test_group_by_path_default_with_summaries(self):
+        self.metrics(default_latency_as_histogram=False)
+
+        @self.app.route('/<url>')
+        def a_test_endpoint(url):
+            return url + ' is OK'
+
+        self.client.get('/default1')
+        self.client.get('/default2')
+        self.client.get('/default3')
+
+        for path in ('/default1', '/default2', '/default3'):
+            self.assertMetric(
+                'flask_http_request_duration_seconds_sum', '[0-9.e-]+',
+                ('path', path), ('status', 200), ('method', 'GET'),
+                endpoint='/metrics'
+            )
+            self.assertMetric(
+                'flask_http_request_duration_seconds_count', '1.0',
+                ('path', path), ('status', 200), ('method', 'GET'),
+                endpoint='/metrics'
+            )
+
     def test_group_by_path(self):
         self.metrics(group_by='path')
 
