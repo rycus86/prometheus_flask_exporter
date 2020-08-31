@@ -19,7 +19,7 @@ before_script:
 script:
   # python tests
   - python -m coverage run --branch --source=prometheus_flask_exporter -m unittest discover -s tests -v
-after_script:
+after_success:
   # coverage reports
   - python -m coverage report -m
   - python -m coverage xml

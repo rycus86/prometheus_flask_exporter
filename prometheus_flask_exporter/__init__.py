@@ -857,12 +857,13 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
 
     @staticmethod
     def _create_response_converter(default_mimetype):
-        from connexion.apis.flask_api import FlaskApi
-
         def _make_response(response):
+            from connexion.apis.flask_api import FlaskApi
+
             mimetype = default_mimetype
             if hasattr(request, 'prom_connexion_content_type'):
                 mimetype = request.prom_connexion_content_type
+
             return FlaskApi.get_response(response, mimetype=mimetype)
         return _make_response
 
