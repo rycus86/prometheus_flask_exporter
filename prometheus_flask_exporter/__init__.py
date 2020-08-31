@@ -834,7 +834,7 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
         if 'response_converter' not in kwargs:
             kwargs['response_converter'] = self._create_response_converter(default_mimetype)
 
-        super().__init__(flask_app, **kwargs)
+        super(ConnexionPrometheusMetrics, self).__init__(flask_app, **kwargs)
 
     @staticmethod
     def content_type(content_type):
@@ -883,7 +883,7 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
 
         if api and 'response_converter' not in kwargs:
             kwargs['response_converter'] = self._create_response_converter(api)
-        super().__init__(app, **kwargs)
+        super(RESTfulPrometheusMetrics, self).__init__(app, **kwargs)
 
     @classmethod
     def for_app_factory(cls, api=None, **kwargs):
@@ -892,7 +892,7 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
     def init_app(self, app, api=None):
         if api:
             self._response_converter = self._create_response_converter(api)
-        return super().init_app(app)
+        return super(RESTfulPrometheusMetrics, self).init_app(app)
 
     @staticmethod
     def _create_response_converter(api):
@@ -903,4 +903,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.16.0'
+__version__ = '0.16.1'

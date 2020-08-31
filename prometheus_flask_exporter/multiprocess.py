@@ -40,7 +40,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, app=None, registry=None, **kwargs):
+    def __init__(self, app=None, **kwargs):
         """
         Create a new multiprocess-aware Prometheus metrics export configuration.
 
@@ -50,8 +50,10 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
 
         _check_multiproc_env_var()
 
-        registry = registry or CollectorRegistry()
+        registry = kwargs.pop('registry', CollectorRegistry())
         MultiProcessCollector(registry)
+
+        kwargs.pop('path', None)  # remove the path parameter if it was passed in
 
         super(MultiprocessPrometheusMetrics, self).__init__(
             app=app, path=None, registry=registry, **kwargs
