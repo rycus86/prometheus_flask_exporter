@@ -35,7 +35,7 @@ jobs:
     stage: integration
     sudo: true
     before_script: skip
-    after_script: skip
+    after_success: skip
     script:
       - sh examples/${TEST_NAME}/run_tests.sh
     env: TEST_NAME=gunicorn
@@ -73,7 +73,7 @@ jobs:
   - stage: deploy
     script: skip
     before_script: skip
-    after_script: skip
+    after_success: skip
     before_deploy:
       - pip install setuptools wheel twine
     deploy:
@@ -87,6 +87,6 @@ jobs:
 
   - stage: verify
     before_script: skip
-    after_script: skip
+    after_success: skip
     script:
       - pip install prometheus-flask-exporter
