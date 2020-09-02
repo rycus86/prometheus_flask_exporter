@@ -12,7 +12,7 @@ from flask import Flask, Response
 from flask.views import MethodViewType
 from werkzeug.serving import is_running_from_reloader
 from prometheus_client import Counter, Histogram, Gauge, Summary
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client.exposition import choose_encoder
 
 if sys.version_info[0:2] >= (3, 4):
     # Python v3.4+ has a built-in has __wrapped__ attribute
@@ -265,7 +265,8 @@ class PrometheusMetrics(object):
             if 'prometheus_multiproc_dir' in os.environ:
                 multiprocess.MultiProcessCollector(registry)
 
-            headers = {'Content-Type': CONTENT_TYPE_LATEST}
+            generate_latest, content_type = choose_encoder(request.headers.get("Accept"))
+            headers = {'Content-Type': content_type}
             return generate_latest(registry), 200, headers
 
     def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
