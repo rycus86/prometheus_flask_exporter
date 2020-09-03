@@ -146,3 +146,45 @@ class MetricsTest(BaseTestCase):
             'cnt_2_total', '1.0',
             ('uri', '/test/2'), ('code', 200)
         )
+
+    def test_default_format(self):
+        self.metrics()
+
+        @self.app.route('/example')
+        def test():
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/example')
+
+        from prometheus_client.exposition import CONTENT_TYPE_LATEST
+
+        response = self.client.get('/metrics')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content_type, CONTENT_TYPE_LATEST)
+
+        self.assertNotIn('# EOF', str(response.data))
+        self.assertRegex(
+            str(response.data),
+            'flask_http_request_duration_seconds_count\\{[^}]+\\} 5.0')
+
+    def test_openmetrics_format(self):
+        self.metrics()
+
+        @self.app.route('/example')
+        def test():
+            return 'OK'
+
+        for _ in range(5):
+            self.client.get('/example')
+
+        from prometheus_client.openmetrics.exposition import CONTENT_TYPE_LATEST
+
+        response = self.client.get('/metrics', headers={'Accept': 'application/openmetrics-text'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content_type, CONTENT_TYPE_LATEST)
+
+        self.assertIn('# EOF', str(response.data))
+        self.assertRegex(
+            str(response.data),
+            'flask_http_request_duration_seconds_count\\{[^}]+\\} 5.0')
