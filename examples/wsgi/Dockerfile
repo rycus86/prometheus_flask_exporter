@@ -2,7 +2,8 @@ FROM httpd
 
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
-        python python-dev python-setuptools python-pip gcc \
+        python python-dev python-setuptools python-pip \
+        libapr1-dev libaprutil1-dev gcc \
     && pip install mod_wsgi
 
 ADD examples/wsgi/requirements.txt /tmp/requirements.txt
