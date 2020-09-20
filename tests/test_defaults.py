@@ -240,6 +240,32 @@ class DefaultsTest(BaseTestCase):
             endpoint='/my-metrics'
         )
 
+    def test_custom_metrics_decorator(self):
+        invocations = list()
+
+        def decorate_metrics(f):
+            def decorated(*args):
+                invocations.append('metrics')
+                return f(*args)
+            return decorated
+
+        self.metrics(metrics_decorator=decorate_metrics)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+
+        self.assertEqual(len(invocations), 0)
+
+        self.assertMetric(
+            'flask_http_request_total', '1.0',
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertEqual(len(invocations), 1)
+
     def test_no_default_export(self):
         self.metrics(export_defaults=False)
 

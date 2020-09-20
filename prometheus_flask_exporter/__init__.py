@@ -107,7 +107,8 @@ class PrometheusMetrics(object):
                  group_by='path', buckets=None,
                  default_latency_as_histogram=True,
                  default_labels=None, response_converter=None,
-                 excluded_paths=None, registry=None, **kwargs):
+                 excluded_paths=None, metrics_decorator=None,
+                 registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
 
@@ -130,6 +131,8 @@ class PrometheusMetrics(object):
             metrics exposed by this `PrometheusMetrics` instance
         :param response_converter: a function that converts the captured
             the produced response object to a Flask friendly representation
+        :param metrics_decorator: an optional decorator to apply to the
+            metrics endpoint, takes a function and needs to return a function
         :param excluded_paths: regular expression(s) as a string or
             a list of strings for paths to exclude from tracking
         :param registry: the Prometheus Registry to use
@@ -142,6 +145,7 @@ class PrometheusMetrics(object):
         self._default_labels = default_labels or {}
         self._default_latency_as_histogram = default_latency_as_histogram
         self._response_converter = response_converter or make_response
+        self._metrics_decorator = metrics_decorator
         self.buckets = buckets
         self.version = __version__
 
@@ -248,7 +252,6 @@ class PrometheusMetrics(object):
         if app is None:
             app = self.app or current_app
 
-        @app.route(path)
         @self.do_not_track()
         def prometheus_metrics():
             # import these here so they don't clash with our own multiprocess module
@@ -268,6 +271,13 @@ class PrometheusMetrics(object):
             generate_latest, content_type = choose_encoder(request.headers.get("Accept"))
             headers = {'Content-Type': content_type}
             return generate_latest(registry), 200, headers
+
+        # apply any user supplied decorators, like authentication
+        if self._metrics_decorator:
+            prometheus_metrics = self._metrics_decorator(prometheus_metrics)
+
+        # apply the Flask route decorator on our metrics endpoint
+        app.route(path)(prometheus_metrics)
 
     def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
         """
@@ -905,4 +915,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.17.0'
+__version__ = '0.18.0'

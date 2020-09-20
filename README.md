@@ -236,6 +236,23 @@ metrics = PrometheusMetrics.for_app_factory()
 metrics.init_app(app)
 ```
 
+## Securing the metrics endpoint
+
+If you wish to have authentication (or any other special handling) on the metrics endpoint,
+you can use the `metrics_decorator` argument when creating the `PrometheusMetrics` instance.
+For example to integrate with [Flask-HTTPAuth](https://github.com/miguelgrinberg/Flask-HTTPAuth)
+use it like it's shown in the example below.
+
+```python
+app = Flask(__name__)
+auth = HTTPBasicAuth()
+metrics = PrometheusMetrics(app, metrics_decorator=auth.login_required)
+
+# ... other authentication setup like @auth.verify_password below
+```
+
+See a full example in the [examples/flask-httpauth](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/flask-httpauth) folder.
+
 ## Debug mode
 
 Please note, that changes being live-reloaded, when running the Flask
