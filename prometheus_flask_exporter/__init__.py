@@ -108,6 +108,7 @@ class PrometheusMetrics(object):
                  default_latency_as_histogram=True,
                  default_labels=None, response_converter=None,
                  excluded_paths=None, metrics_decorator=None,
+                 export_defaults_with_labels=None,
                  registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
@@ -135,6 +136,8 @@ class PrometheusMetrics(object):
             metrics endpoint, takes a function and needs to return a function
         :param excluded_paths: regular expression(s) as a string or
             a list of strings for paths to exclude from tracking
+        :param export_defaults_with_labels: a boolean indicating wether default labels
+            will be attached to each of the metrics exposed by this `PrometheusMetrics` instance
         :param registry: the Prometheus Registry to use
         """
 
@@ -146,6 +149,7 @@ class PrometheusMetrics(object):
         self._default_latency_as_histogram = default_latency_as_histogram
         self._response_converter = response_converter or make_response
         self._metrics_decorator = metrics_decorator
+        self._export_defaults_with_labels = export_defaults_with_labels or True
         self.buckets = buckets
         self.version = __version__
 
@@ -701,8 +705,9 @@ class PrometheusMetrics(object):
 
         labels = labels.copy() if labels else dict()
 
-        if self._default_labels:
-            labels.update(self._default_labels.copy())
+        if self._export_defaults_with_labels:
+            if self._default_labels:
+                labels.update(self._default_labels.copy())
 
         def argspec(func):
             if hasattr(inspect, 'getfullargspec'):
