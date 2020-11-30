@@ -18,6 +18,19 @@ Install using [PIP](https://pip.pypa.io/en/stable/quickstart/):
 ```bash
 pip install prometheus-flask-exporter
 ```
+or paste it into requirements.txt:
+```
+# newest version
+prometheus-flask-exporter
+
+# or with specific version number
+prometheus-flask-exporter==0.18.1
+```
+and then install dependencies from requirements.txt file as usual:
+```
+pip install -r requirements.txt
+```
+
 
 ## Usage
 
