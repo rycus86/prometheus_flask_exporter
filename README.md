@@ -11,6 +11,14 @@ This library provides HTTP request metrics to export into
 [Prometheus](https://prometheus.io/).
 It can also track method invocations using convenient functions.
 
+## Installing
+
+Install using [PIP](https://pip.pypa.io/en/stable/quickstart/):
+
+```bash
+pip install prometheus-flask-exporter
+```
+
 ## Usage
 
 ```python
