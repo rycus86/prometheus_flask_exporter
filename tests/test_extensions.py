@@ -18,8 +18,8 @@ class ExtensionsTest(BaseTestCase):
     def setUp(self):
         super(ExtensionsTest, self).setUp()
 
-        if 'prometheus_multiproc_dir' not in os.environ:
-            os.environ['prometheus_multiproc_dir'] = '/tmp'
+        if 'PROMETHEUS_MULTIPROC_DIR' not in os.environ:
+            os.environ['PROMETHEUS_MULTIPROC_DIR'] = '/tmp'
             self._multiproc_dir_added = True
         else:
             self._multiproc_dir_added = False
@@ -41,7 +41,7 @@ class ExtensionsTest(BaseTestCase):
 
     def tearDown(self):
         if self._multiproc_dir_added:
-            del os.environ['prometheus_multiproc_dir']
+            del os.environ['PROMETHEUS_MULTIPROC_DIR']
 
     def test_with_defaults(self):
         for extension_type in self._all_extensions:
