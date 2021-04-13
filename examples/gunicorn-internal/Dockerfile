@@ -10,5 +10,6 @@ ADD examples/gunicorn-internal/server.py examples/gunicorn-internal/config.py /v
 WORKDIR /var/flask
 
 ENV PROMETHEUS_MULTIPROC_DIR /tmp
+ENV prometheus_multiproc_dir /tmp
 
 CMD gunicorn -c config.py -w 4 -b 0.0.0.0:4000 server:app

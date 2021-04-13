@@ -21,8 +21,12 @@ def _check_multiproc_env_var():
     if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
         if os.path.isdir(os.environ['PROMETHEUS_MULTIPROC_DIR']):
             return
+    elif 'prometheus_multiproc_dir' in os.environ:
+        if os.path.isdir(os.environ['prometheus_multiproc_dir']):
+            return
 
-    raise ValueError('env PROMETHEUS_MULTIPROC_DIR is not set or not a directory')
+    raise ValueError('one of env PROMETHEUS_MULTIPROC_DIR or env prometheus_multiproc_dir' +
+        'must be set and be a directory')
 
 
 class MultiprocessPrometheusMetrics(PrometheusMetrics):

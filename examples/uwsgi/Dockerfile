@@ -12,6 +12,7 @@ ADD examples/uwsgi/server.py /var/flask/
 WORKDIR /var/flask
 
 ENV PROMETHEUS_MULTIPROC_DIR /tmp
+ENV prometheus_multiproc_dir /tmp
 ENV METRICS_PORT 9200
 
 CMD uwsgi --http 0.0.0.0:4000 --module server:app --master --processes 4 --threads 2

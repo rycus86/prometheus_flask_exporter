@@ -10,6 +10,7 @@ ADD examples/gunicorn/server.py examples/gunicorn/config.py /var/flask/
 WORKDIR /var/flask
 
 ENV PROMETHEUS_MULTIPROC_DIR /tmp
+ENV prometheus_multiproc_dir /tmp
 ENV METRICS_PORT 9200
 
 CMD gunicorn -c config.py -w 4 -b 0.0.0.0:4000 server:app
