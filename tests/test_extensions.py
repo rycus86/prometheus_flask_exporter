@@ -44,8 +44,10 @@ class ExtensionsTest(BaseTestCase):
 
     def tearDown(self):
         if self._multiproc_dir_added:
-            del os.environ['PROMETHEUS_MULTIPROC_DIR']
-            del os.environ['prometheus_multiproc_dir']
+            if os.environ.get('PROMETHEUS_MULTIPROC_DIR'):
+                del os.environ['PROMETHEUS_MULTIPROC_DIR']
+            if os.environ.get('prometheus_multiproc_dir'):
+                del os.environ['prometheus_multiproc_dir']
 
     def test_with_defaults(self):
         for extension_type in self._all_extensions:
@@ -118,3 +120,41 @@ class ExtensionsTest(BaseTestCase):
                 else:
                     self.assertIs(getattr(obj, arg), value,
                                   'Unexpected %s object in %s' % (arg, extension_type.__name__))
+
+    def test_prometheus_multiproc_env_var_change(self):
+        for extension_type in self._all_extensions:
+            if extension_type in [
+                MultiprocessPrometheusMetrics, UWsgiPrometheusMetrics,
+                GunicornPrometheusMetrics, GunicornInternalPrometheusMetrics
+            ]:
+                # Check only lower case env var works
+                if os.environ.get('PROMETHEUS_MULTIPROC_DIR'):
+                    del os.environ['PROMETHEUS_MULTIPROC_DIR']
+                os.environ['prometheus_multiproc_dir'] = '/tmp'
+
+                try:
+                    app = Flask(__name__)
+                    app.testing = True
+                    flask_app = app
+
+                    obj = extension_type(app=app)
+                except Exception as ex:
+                    self.fail('Failed to instantiate %s: %s' % (extension_type.__name__, ex))
+
+                self.assertIs(obj.app, flask_app, 'Unexpected app object in %s' % extension_type.__name__)
+
+                # Check only upper case env var works
+                if os.environ.get('prometheus_multiproc_dir'):
+                    del os.environ['prometheus_multiproc_dir']
+                os.environ['PROMETHEUS_MULTIPROC_DIR'] = '/tmp'
+
+                try:
+                    app2 = Flask(__name__)
+                    app2.testing = True
+                    flask_app2 = app2
+
+                    obj2 = extension_type(app=app2)
+                except Exception as ex:
+                    self.fail('Failed to instantiate %s: %s' % (extension_type.__name__, ex))
+
+                self.assertIs(obj2.app, flask_app2, 'Unexpected app object in %s' % extension_type.__name__)
