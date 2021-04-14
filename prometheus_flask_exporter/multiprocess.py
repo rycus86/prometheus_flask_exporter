@@ -11,18 +11,22 @@ from . import PrometheusMetrics
 
 def _check_multiproc_env_var():
     """
-    Checks that the `prometheus_multiproc_dir` environment variable is set,
+    Checks that the `PROMETHEUS_MULTIPROC_DIR` environment variable is set,
     which is required for the multiprocess collector to work properly.
 
     :raises ValueError: if the environment variable is not set
         or if it does not point to a directory
     """
 
-    if 'prometheus_multiproc_dir' in os.environ:
+    if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
+        if os.path.isdir(os.environ['PROMETHEUS_MULTIPROC_DIR']):
+            return
+    elif 'prometheus_multiproc_dir' in os.environ:
         if os.path.isdir(os.environ['prometheus_multiproc_dir']):
             return
 
-    raise ValueError('env prometheus_multiproc_dir is not set or not a directory')
+    raise ValueError('one of env PROMETHEUS_MULTIPROC_DIR or env prometheus_multiproc_dir' +
+        'must be set and be a directory')
 
 
 class MultiprocessPrometheusMetrics(PrometheusMetrics):

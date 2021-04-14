@@ -11,6 +11,7 @@ RUN pip install -e /tmp/latest --upgrade
 ADD examples/uwsgi-lazy-apps/server.py /var/flask/
 WORKDIR /var/flask
 
+ENV PROMETHEUS_MULTIPROC_DIR /tmp
 ENV prometheus_multiproc_dir /tmp
 
 CMD uwsgi --http 0.0.0.0:4000 --module server:app --master --processes 4 --threads 2 --lazy-apps

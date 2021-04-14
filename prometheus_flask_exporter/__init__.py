@@ -257,7 +257,7 @@ class PrometheusMetrics(object):
             # import these here so they don't clash with our own multiprocess module
             from prometheus_client import multiprocess, CollectorRegistry
 
-            if 'prometheus_multiproc_dir' in os.environ:
+            if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
                 registry = CollectorRegistry()
             else:
                 registry = self.registry
@@ -265,7 +265,7 @@ class PrometheusMetrics(object):
             if 'name[]' in request.args:
                 registry = registry.restricted_registry(request.args.getlist('name[]'))
 
-            if 'prometheus_multiproc_dir' in os.environ:
+            if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
                 multiprocess.MultiProcessCollector(registry)
 
             generate_latest, content_type = choose_encoder(request.headers.get("Accept"))

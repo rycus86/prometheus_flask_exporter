@@ -352,7 +352,7 @@ This should return `True` on one process only, and the underlying
 [Prometheus client library](https://github.com/prometheus/client_python)
 will collect the metrics for all the forked children or siblings.
 
-__Note:__ this needs the `prometheus_multiproc_dir` environment variable
+__Note:__ this needs the `PROMETHEUS_MULTIPROC_DIR` environment variable
 to point to a valid, writable directory.
 
 You'll also have to call the `metrics.start_http_server()` function

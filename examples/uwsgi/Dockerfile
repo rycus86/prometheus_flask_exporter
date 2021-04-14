@@ -11,6 +11,7 @@ RUN pip install -e /tmp/latest --upgrade
 ADD examples/uwsgi/server.py /var/flask/
 WORKDIR /var/flask
 
+ENV PROMETHEUS_MULTIPROC_DIR /tmp
 ENV prometheus_multiproc_dir /tmp
 ENV METRICS_PORT 9200
 
