@@ -301,7 +301,7 @@ class PrometheusMetrics(object):
             app.run(host=host, port=port)
 
         thread = threading.Thread(target=run_app)
-        thread.setDaemon(True)
+        thread.daemon = True
         thread.start()
 
     def export_defaults(self, buckets=None, group_by='path',
