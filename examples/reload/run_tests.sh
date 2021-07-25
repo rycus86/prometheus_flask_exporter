@@ -40,8 +40,8 @@ if [ "$?" != "0" ]; then
 fi
 
 echo 'Changing the server...'
-docker exec -it reload-sample sed -i "s#@app.route('/test')#@app.route('/changed')#" /var/flask/example.py
-docker exec -it reload-sample sed -i "s#@app.route('/ping')#@app.route('/ping2')#" /var/flask/example.py
+docker exec reload-sample sed -i "s#@app.route('/test')#@app.route('/changed')#" /var/flask/example.py
+docker exec reload-sample sed -i "s#@app.route('/ping')#@app.route('/ping2')#" /var/flask/example.py
 
 echo 'Waiting for the server to apply the changes...'
 

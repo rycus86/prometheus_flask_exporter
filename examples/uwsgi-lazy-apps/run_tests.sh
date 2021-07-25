@@ -14,7 +14,7 @@ docker run -d --name uwsgi-lazy-apps-sample -p 4000:4000 uwsgi-lazy-apps-sample 
 echo 'Waiting for uwsgi [lazy apps] to start...'
 
 for _ in $(seq 1 10); do
-    PROCESS_COUNT=$(docker exec -it uwsgi-lazy-apps-sample sh -c 'pgrep -a uwsgi | wc -l')
+    PROCESS_COUNT=$(docker exec uwsgi-lazy-apps-sample sh -c 'pgrep -a uwsgi | wc -l')
     if [ $PROCESS_COUNT -ge 5 ]; then
         break
     fi

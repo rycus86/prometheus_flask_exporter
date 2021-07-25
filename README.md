@@ -3,9 +3,9 @@
 [![PyPI](https://img.shields.io/pypi/v/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
 [![PyPI](https://img.shields.io/pypi/pyversions/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/prometheus-flask-exporter.svg)](https://pypi.python.org/pypi/prometheus-flask-exporter)
-[![Travis](https://img.shields.io/travis/rycus86/prometheus_flask_exporter.svg)](https://travis-ci.org/rycus86/prometheus_flask_exporter)
 [![Coverage Status](https://coveralls.io/repos/github/rycus86/prometheus_flask_exporter/badge.svg?branch=master)](https://coveralls.io/github/rycus86/prometheus_flask_exporter?branch=master)
 [![Code Climate](https://codeclimate.com/github/rycus86/prometheus_flask_exporter/badges/gpa.svg)](https://codeclimate.com/github/rycus86/prometheus_flask_exporter)
+[![Test & publish package](https://github.com/rycus86/prometheus_flask_exporter/actions/workflows/test-and-publish.yml/badge.svg)](https://github.com/rycus86/prometheus_flask_exporter/actions/workflows/test-and-publish.yml)
 
 This library provides HTTP request metrics to export into
 [Prometheus](https://prometheus.io/).

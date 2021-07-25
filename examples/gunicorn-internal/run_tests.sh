@@ -13,7 +13,7 @@ docker run -d --name gunicorn-internal-sample -p 4000:4000 -p 9200:9200 gunicorn
 echo 'Waiting for Gunicorn to start...'
 
 for _ in $(seq 1 10); do
-    PROCESS_COUNT=$(docker exec -it gunicorn-internal-sample sh -c 'pgrep -a gunicorn | wc -l')
+    PROCESS_COUNT=$(docker exec gunicorn-internal-sample sh -c 'pgrep -a gunicorn | wc -l')
     if [ $PROCESS_COUNT -ge 5 ]; then
         break
     fi

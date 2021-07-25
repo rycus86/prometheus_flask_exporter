@@ -13,7 +13,7 @@ docker run -d --name uwsgi-sample -p 4000:4000 -p 9200:9200 uwsgi-sample > /dev/
 echo 'Waiting for uwsgi to start...'
 
 for _ in $(seq 1 10); do
-    PROCESS_COUNT=$(docker exec -it uwsgi-sample sh -c 'pgrep -a uwsgi | wc -l')
+    PROCESS_COUNT=$(docker exec uwsgi-sample sh -c 'pgrep -a uwsgi | wc -l')
     if [ $PROCESS_COUNT -ge 5 ]; then
         break
     fi
