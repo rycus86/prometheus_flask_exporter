@@ -406,3 +406,40 @@ class EndpointTest(BaseTestCase):
             'flask_http_request_duration_seconds_count',
             ('method', 'GET'), ('status', 200), ('path', '/exc/two')
         )
+
+    def test_exclude_paths_from_user_metrics(self):
+        metrics = self.metrics(excluded_paths='/excluded', exclude_user_defaults=True)
+
+        @self.app.route('/included')
+        def included():
+            return 'OK'
+
+        @self.app.route('/excluded')
+        def excluded():
+            return 'OK'
+
+        metrics.register_default(
+            metrics.counter(
+                name='by_path_counter',
+                description='Request count by path',
+                labels={'path': lambda: request.path}
+            )
+        )
+
+        for _ in range(5):
+            self.client.get('/included')
+            self.client.get('/excluded')
+
+        self.assertMetric(
+            'flask_http_request_total', 5.0,
+            ('method', 'GET'), ('status', 200)
+        )
+
+        self.assertMetric(
+            'by_path_counter_total', 5.0,
+            ('path', '/included')
+        )
+        self.assertAbsent(
+            'by_path_counter_total',
+            ('path', '/excluded')
+        )

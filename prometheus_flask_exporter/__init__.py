@@ -1,18 +1,18 @@
+import functools
+import inspect
 import os
 import re
 import sys
-import inspect
-import warnings
-import functools
 import threading
+import warnings
 from timeit import default_timer
 
-from flask import request, make_response, current_app
 from flask import Flask, Response
+from flask import request, make_response, current_app
 from flask.views import MethodViewType
-from werkzeug.serving import is_running_from_reloader
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client.exposition import choose_encoder
+from werkzeug.serving import is_running_from_reloader
 
 if sys.version_info[0:2] >= (3, 4):
     # Python v3.4+ has a built-in has __wrapped__ attribute
@@ -102,12 +102,18 @@ class PrometheusMetrics(object):
         - Without an argument, possibly to use with the Flask `request` object
     """
 
-    def __init__(self, app, path='/metrics',
-                 export_defaults=True, defaults_prefix='flask',
-                 group_by='path', buckets=None,
+    def __init__(self, app,
+                 path='/metrics',
+                 export_defaults=True,
+                 defaults_prefix='flask',
+                 group_by='path',
+                 buckets=None,
                  default_latency_as_histogram=True,
-                 default_labels=None, response_converter=None,
-                 excluded_paths=None, metrics_decorator=None,
+                 default_labels=None,
+                 response_converter=None,
+                 excluded_paths=None,
+                 exclude_user_defaults=True,
+                 metrics_decorator=None,
                  registry=None, **kwargs):
         """
         Create a new Prometheus metrics export configuration.
@@ -135,6 +141,8 @@ class PrometheusMetrics(object):
             metrics endpoint, takes a function and needs to return a function
         :param excluded_paths: regular expression(s) as a string or
             a list of strings for paths to exclude from tracking
+        :param exclude_user_defaults: also apply the `excluded_paths`
+            exclusions to user-defined defaults (not only built-in ones)
         :param registry: the Prometheus Registry to use
         """
 
@@ -193,6 +201,8 @@ class PrometheusMetrics(object):
             ]
         else:
             self.excluded_paths = None
+
+        self.exclude_user_defaults = exclude_user_defaults
 
         if app is not None:
             self.init_app(app)
@@ -623,6 +633,11 @@ class PrometheusMetrics(object):
         def decorator(f):
             @wraps(f)
             def func(*args, **kwargs):
+                if self.exclude_user_defaults and self.excluded_paths:
+                    # exclude based on default excludes
+                    if any(pattern.match(request.path) for pattern in self.excluded_paths):
+                        return f(*args, **kwargs)
+
                 if before:
                     metric = get_metric(None)
                     before(metric)
@@ -915,4 +930,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.18.2'
+__version__ = '0.18.3'
