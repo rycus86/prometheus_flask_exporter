@@ -1,0 +1,5 @@
+flask
+gunicorn
+pebble
+prometheus_client
+prometheus_flask_exporter

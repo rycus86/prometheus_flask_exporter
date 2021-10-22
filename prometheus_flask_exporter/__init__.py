@@ -832,7 +832,8 @@ class PrometheusMetrics(object):
 
         gauge = Gauge(
             name, description, labelnames or tuple(),
-            registry=self.registry
+            registry=self.registry,
+            multiprocess_mode='max'
         )
 
         if labels:
@@ -930,4 +931,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.18.3'
+__version__ = '0.18.4'
