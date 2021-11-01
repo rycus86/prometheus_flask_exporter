@@ -25,7 +25,7 @@ def _check_multiproc_env_var():
         if os.path.isdir(os.environ['prometheus_multiproc_dir']):
             return
 
-    raise ValueError('one of env PROMETHEUS_MULTIPROC_DIR or env prometheus_multiproc_dir' +
+    raise ValueError('one of env PROMETHEUS_MULTIPROC_DIR or env prometheus_multiproc_dir ' +
         'must be set and be a directory')
 
 
