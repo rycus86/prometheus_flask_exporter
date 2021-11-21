@@ -38,5 +38,18 @@ if [ "$?" != "0" ]; then
     _fail
 fi
 
+for _ in $(seq 1 10); do
+    curl -s http://localhost:4000/error > /dev/null
+done
+
+curl -s http://localhost:4000/metrics \
+  | grep 'flask_http_request_total{method="GET",status="500"} 10.0' \
+  > /dev/null
+
+if [ "$?" != "0" ]; then
+    echo 'The expected error metrics are not found'
+    _fail
+fi
+
 docker rm -f gunicorn-internal-sample > /dev/null
 echo 'OK, all done'

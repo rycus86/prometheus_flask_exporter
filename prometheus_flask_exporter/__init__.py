@@ -428,7 +428,7 @@ class PrometheusMetrics(object):
                 if any(pattern.match(request.path) for pattern in self.excluded_paths):
                     return response
 
-            if hasattr(request, 'prom_start_time'):
+            if hasattr(request, 'prom_start_time') and self._not_yet_handled('duration_reported'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
 
                 if callable(duration_group):
@@ -445,10 +445,11 @@ class PrometheusMetrics(object):
 
                 request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
-            request_total_metric.labels(
-                method=request.method, status=_to_status_code(response.status_code),
-                **labels.values_for(response)
-            ).inc()
+            if self._not_yet_handled('total_reported'):
+                request_total_metric.labels(
+                    method=request.method, status=_to_status_code(response.status_code),
+                    **labels.values_for(response)
+                ).inc()
 
             return response
 
@@ -472,7 +473,7 @@ class PrometheusMetrics(object):
                 **labels.values_for(response)
             ).inc()
 
-            if hasattr(request, 'prom_start_time'):
+            if hasattr(request, 'prom_start_time') and self._not_yet_handled('duration_reported'):
                 total_time = max(default_timer() - request.prom_start_time, 0)
 
                 request_duration_labels = {
@@ -484,10 +485,11 @@ class PrometheusMetrics(object):
 
                 request_duration_metric.labels(**request_duration_labels).observe(total_time)
 
-            request_total_metric.labels(
-                method=request.method, status=500,
-                **labels.values_for(response)
-            ).inc()
+            if self._not_yet_handled('total_reported'):
+                request_total_metric.labels(
+                    method=request.method, status=500,
+                    **labels.values_for(response)
+                ).inc()
 
             return
 
@@ -850,6 +852,25 @@ class PrometheusMetrics(object):
         except NameError:
             return isinstance(value, str)  # python3
 
+    @staticmethod
+    def _not_yet_handled(tracking_key):
+        """
+        Check if the request has not handled some tracking yet,
+        and mark the request if this is the first time.
+        This is to avoid follow-up actions.
+
+        :param tracking_key: a key identifying a processing step
+        :return: True if this is the first time the request is
+          trying to handle this processing step
+        """
+
+        key = 'prom_' + tracking_key
+        if hasattr(request, key):
+            return False
+        else:
+            setattr(request, key, True)
+            return True
+
 
 class ConnexionPrometheusMetrics(PrometheusMetrics):
     """
@@ -931,4 +952,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.18.5'
+__version__ = '0.18.6'
