@@ -299,9 +299,10 @@ class PrometheusMetrics(object):
         :param host: the HTTP host to listen on (default: `0.0.0.0`)
         :param endpoint: the URL path to expose the endpoint on
             (default: `/metrics`)
-        :param ssl: enable SSL to http server. 
-            It expects a dict with 2 keys cert and key with cert and key paths.
-            Default: None
+        :param ssl: enable SSL to http server
+            It expects a dict with 2 keys: `cert` and `key` with
+            certificate and key paths.
+            Default: `None`
         """
 
         if is_running_from_reloader():
@@ -958,4 +959,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.18.6'
+__version__ = '0.18.7'
