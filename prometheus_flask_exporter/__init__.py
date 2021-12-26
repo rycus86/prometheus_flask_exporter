@@ -289,7 +289,7 @@ class PrometheusMetrics(object):
         # apply the Flask route decorator on our metrics endpoint
         app.route(path)(prometheus_metrics)
 
-    def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics'):
+    def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics', ssl=None):
         """
         Start an HTTP server for exposing the metrics.
         This will be an individual Flask application,
@@ -299,6 +299,9 @@ class PrometheusMetrics(object):
         :param host: the HTTP host to listen on (default: `0.0.0.0`)
         :param endpoint: the URL path to expose the endpoint on
             (default: `/metrics`)
+        :param ssl: enable SSL to http server. 
+            It expects a dict with 2 keys cert and key with cert and key paths.
+            Default: None
         """
 
         if is_running_from_reloader():
@@ -308,7 +311,10 @@ class PrometheusMetrics(object):
         self.register_endpoint(endpoint, app)
 
         def run_app():
-            app.run(host=host, port=port)
+            if ssl is None:
+                app.run(host=host, port=port)
+            else:
+                app.run(host=host, port=port, ssl_context=(ssl["cert"], ssl["key"]))
 
         thread = threading.Thread(target=run_app)
         thread.daemon = True
