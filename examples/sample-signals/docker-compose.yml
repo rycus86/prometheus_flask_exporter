@@ -3,25 +3,27 @@ services:
 
   # a sample app with metrics enabled
   app:
+    container_name: app  
     build:
       context: app
     stop_signal: SIGKILL
-    ports:
-      - 5000:5000
 
   # dumb, random load generator
   generator:
     build:
       context: generator
     stop_signal: SIGKILL
+    depends_on:
+      - app    
 
   # the Prometheus server
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:v2.2.1
     volumes:
       - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - 9090:9090
+    depends_on:
+      - app
 
   # Grafana for visualization
   grafana:
@@ -33,4 +35,5 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     ports:
       - 3000:3000
-
+    depends_on:
+      - prometheus
