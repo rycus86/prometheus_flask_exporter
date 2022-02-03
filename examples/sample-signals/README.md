@@ -121,5 +121,5 @@ rate(
 Don't forget to shut the demo down, once finished:
 
 ```shell
-$ docker-compose down -v
+$ docker-compose down -v --rmi all
 ```
