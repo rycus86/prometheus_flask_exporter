@@ -3,7 +3,7 @@ services:
 
   # a sample app with metrics enabled
   app:
-    container_name: app  
+    container_name: app
     build:
       context: app
     stop_signal: SIGKILL
@@ -14,7 +14,7 @@ services:
       context: generator
     stop_signal: SIGKILL
     depends_on:
-      - app    
+      - app
 
   # the Prometheus server
   prometheus:
