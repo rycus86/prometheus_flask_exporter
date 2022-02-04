@@ -12,7 +12,7 @@ def run():
         try:
             target = random.choice(endpoints)
             requests.get(HOST + target, timeout=1)
-        except:
+        except requests.RequestException:
             print("cannot connect", HOST)
             time.sleep(1)
 
