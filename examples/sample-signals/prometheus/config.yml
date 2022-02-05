@@ -1,21 +1,16 @@
 global:
-  scrape_interval:     3s
+  scrape_interval: 3s
 
   external_labels:
-      monitor: 'example-app'
+    monitor: "example-app"
 
 rule_files:
 
 scrape_configs:
-  - job_name: 'prometheus'
-
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["prometheus:9090"]
 
-  - job_name: 'example'
-
-    dns_sd_configs:
-      - names: ['app']
-        port: 5000
-        type: A
-        refresh_interval: 5s
+  - job_name: "example"
+    static_configs:
+      - targets: ["app:5000"]
