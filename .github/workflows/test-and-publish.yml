@@ -49,6 +49,7 @@ jobs:
           - testname: restful-return-none
           - testname: restplus-default-metrics
           - testname: flask-httpauth
+          - testname: flask-multi-processes
           - testname: reload
     steps:
       - uses: actions/checkout@v2

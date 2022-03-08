@@ -91,6 +91,41 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
         pass
 
 
+class MultiprocessInternalPrometheusMetrics(MultiprocessPrometheusMetrics):
+    """
+    A multiprocess `PrometheusMetrics` extension with the metrics endpoint
+    registered on the Flask app internally.
+    This variant is expected to expose the metrics endpoint on the same server
+    as the production endpoints are served too.
+
+    Alternatively, you can use the instance functions as well.
+    """
+
+    def __init__(self, app=None, path='/metrics', **kwargs):
+        """
+        Create a new multiprocess-aware Prometheus metrics export configuration.
+        """
+
+        super(MultiprocessInternalPrometheusMetrics, self).__init__(app=app, **kwargs)
+
+        if app:
+            self.register_endpoint(path)
+        else:
+            self.path = path
+
+    def should_start_http_server(self):
+        return False
+
+    @classmethod
+    def start_http_server_when_ready(cls, port, host='0.0.0.0'):
+        import warnings
+        warnings.warn(
+            'The `MultiprocessInternalPrometheusMetrics` class is expected to expose the metrics endpoint '
+            'on the same Flask application, so the `start_http_server_when_ready` should not be called.',
+            UserWarning
+        )
+
+
 class UWsgiPrometheusMetrics(MultiprocessPrometheusMetrics):
     """
     A multiprocess `PrometheusMetrics` extension targeting uWSGI deployments.

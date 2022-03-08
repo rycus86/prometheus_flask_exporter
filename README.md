@@ -24,7 +24,7 @@ or paste it into requirements.txt:
 prometheus-flask-exporter
 
 # or with specific version number
-prometheus-flask-exporter==0.18.7
+prometheus-flask-exporter==0.19.0
 ```
 and then install dependencies from requirements.txt file as usual:
 ```
@@ -352,6 +352,22 @@ class MyMultiprocessMetrics(MultiprocessPrometheusMetrics):
 This should return `True` on one process only, and the underlying
 [Prometheus client library](https://github.com/prometheus/client_python)
 will collect the metrics for all the forked children or siblings.
+
+An additional Flask extension for apps with `processes=N` and `threaded=False` exists
+with the `MultiprocessInternalPrometheusMetrics` class.
+
+```python
+from flask import Flask
+from prometheus_flask_exporter.multiprocess import MultiprocessInternalPrometheusMetrics
+
+app = Flask(__name__)
+metrics = MultiprocessInternalPrometheusMetrics(app)
+
+...
+
+if __name__ == '__main__':
+    app.run('0.0.0.0', 4000, processes=5, threaded=False)
+```
 
 __Note:__ this needs the `PROMETHEUS_MULTIPROC_DIR` environment variable
 to point to a valid, writable directory.
