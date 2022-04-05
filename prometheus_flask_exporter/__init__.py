@@ -11,7 +11,7 @@ from flask import Flask, Response
 from flask import request, make_response, current_app
 from flask.views import MethodViewType
 from prometheus_client import Counter, Histogram, Gauge, Summary
-from prometheus_client.exposition import choose_encoder
+from prometheus_client.exposition import choose_formatter
 from werkzeug.serving import is_running_from_reloader
 
 if sys.version_info[0:2] >= (3, 4):
@@ -278,7 +278,7 @@ class PrometheusMetrics(object):
             if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
                 multiprocess.MultiProcessCollector(registry)
 
-            generate_latest, content_type = choose_encoder(request.headers.get("Accept"))
+            generate_latest, content_type = choose_formatter(request.headers.get("Accept"))
             headers = {'Content-Type': content_type}
             return generate_latest(registry), 200, headers
 
