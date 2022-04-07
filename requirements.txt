@@ -1,2 +1,2 @@
 flask
-prometheus_client
+prometheus_client==0.13.1
