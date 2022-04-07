@@ -29,5 +29,5 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    install_requires=['prometheus_client', 'flask'],
+    install_requires=['prometheus_client==0.13.1', 'flask'],
 )
