@@ -11,7 +11,13 @@ from flask import Flask, Response
 from flask import request, make_response, current_app
 from flask.views import MethodViewType
 from prometheus_client import Counter, Histogram, Gauge, Summary
-from prometheus_client.exposition import choose_formatter
+try:
+    # prometheus-client >= 0.14.0
+    from prometheus_client.exposition import choose_formatter
+except ImportError:
+    # prometheus-client < 0.14.0
+    from prometheus_client.exposition import choose_encoder as choose_formatter
+
 from werkzeug.serving import is_running_from_reloader
 
 if sys.version_info[0:2] >= (3, 4):
