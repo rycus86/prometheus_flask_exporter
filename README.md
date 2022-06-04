@@ -24,7 +24,7 @@ or paste it into requirements.txt:
 prometheus-flask-exporter
 
 # or with specific version number
-prometheus-flask-exporter==0.20.1
+prometheus-flask-exporter==0.20.2
 ```
 and then install dependencies from requirements.txt file as usual:
 ```
@@ -274,6 +274,22 @@ metrics = PrometheusMetrics(app, metrics_decorator=auth.login_required)
 ```
 
 See a full example in the [examples/flask-httpauth](https://github.com/rycus86/prometheus_flask_exporter/tree/master/examples/flask-httpauth) folder.
+
+## Custom metrics endpoint
+
+You can also take full control of the metrics endpoint by generating its contents,
+and managing how it is exposed by yourself.
+
+```python
+app = Flask(__name__)
+# path=None to avoid registering a /metrics endpoint on the same Flask app
+metrics = PrometheusMetrics(app, path=None)
+
+# later ... generate the response (and its content type) to expose to Prometheus
+response_data, content_type = metrics.generate_metrics()
+```
+
+See the related conversation in [issue #135](https://github.com/rycus86/prometheus_flask_exporter/issues/135).
 
 ## Debug mode
 

@@ -11,12 +11,13 @@ from flask import Flask, Response
 from flask import request, make_response, current_app
 from flask.views import MethodViewType
 from prometheus_client import Counter, Histogram, Gauge, Summary
+from prometheus_client import multiprocess as pc_multiprocess, CollectorRegistry
 try:
     # prometheus-client >= 0.14.0
-    from prometheus_client.exposition import choose_formatter
+    from prometheus_client.exposition import choose_encoder
 except ImportError:
     # prometheus-client < 0.14.0
-    from prometheus_client.exposition import choose_encoder as choose_formatter
+    from prometheus_client.exposition import choose_formatter as choose_encoder
 
 from werkzeug.serving import is_running_from_reloader
 
@@ -234,8 +235,8 @@ class PrometheusMetrics(object):
         This callback can be used to initialize an application for the
         use with this prometheus reporter setup.
 
-        This is usually used with a Flask "app factory" configuration. Please
-        see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
+        This is usually used with a Flask "app factory" configuration.
+        Please see: http://flask.pocoo.org/docs/1.0/patterns/appfactories/
 
         Note, that you need to use `PrometheusMetrics.for_app_factory()`
         for this mode, otherwise it is called automatically.
@@ -270,23 +271,15 @@ class PrometheusMetrics(object):
 
         @self.do_not_track()
         def prometheus_metrics():
-            # import these here so they don't clash with our own multiprocess module
-            from prometheus_client import multiprocess, CollectorRegistry
-
-            if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
-                registry = CollectorRegistry()
-            else:
-                registry = self.registry
-
+            accept_header = request.headers.get("Accept")
             if 'name[]' in request.args:
-                registry = registry.restricted_registry(request.args.getlist('name[]'))
+                names = request.args.getlist('name[]')
+            else:
+                names = None
 
-            if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
-                multiprocess.MultiProcessCollector(registry)
-
-            generate_latest, content_type = choose_formatter(request.headers.get("Accept"))
+            generated_data, content_type = self.generate_metrics(accept_header, names)
             headers = {'Content-Type': content_type}
-            return generate_latest(registry), 200, headers
+            return generated_data, 200, headers
 
         # apply any user supplied decorators, like authentication
         if self._metrics_decorator:
@@ -294,6 +287,36 @@ class PrometheusMetrics(object):
 
         # apply the Flask route decorator on our metrics endpoint
         app.route(path)(prometheus_metrics)
+
+    def generate_metrics(self, accept_header=None, names=None):
+        """
+        Generate the metrics output for Prometheus to consume.
+        This can be exposed on a dedicated server, or on the Flask app, or for
+        local development you can use the shorthand method to expose it on a
+        new Flask app, see `PrometheusMetrics.start_http_server()`.
+
+        :param accept_header: The value of the HTTP Accept request header
+            (default `None`)
+        :param names: Names to only return samples for, must be a list of
+            strings if not `None` (default `None`)
+        :return: a tuple of response content and response content type
+            (both `str` types)
+        """
+
+        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
+            registry = CollectorRegistry()
+        else:
+            registry = self.registry
+
+        if names:
+            registry = registry.restricted_registry(names)
+
+        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ or 'prometheus_multiproc_dir' in os.environ:
+            pc_multiprocess.MultiProcessCollector(registry)
+
+        generate_latest, content_type = choose_encoder(accept_header)
+        generated_content = generate_latest(registry).decode('utf-8')
+        return generated_content, content_type
 
     def start_http_server(self, port, host='0.0.0.0', endpoint='/metrics', ssl=None):
         """
@@ -861,9 +884,9 @@ class PrometheusMetrics(object):
     @staticmethod
     def _is_string(value):
         try:
-            return isinstance(value, basestring)  # python2
-        except NameError:
             return isinstance(value, str)  # python3
+        except NameError:
+            return isinstance(value, basestring)  # python2
 
     @staticmethod
     def _not_yet_handled(tracking_key):
@@ -965,4 +988,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.20.1'
+__version__ = '0.20.2'

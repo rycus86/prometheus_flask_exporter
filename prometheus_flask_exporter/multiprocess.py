@@ -63,7 +63,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
             app=app, path=None, registry=registry, **kwargs
         )
 
-    def start_http_server(self, port, host='0.0.0.0', endpoint=None):
+    def start_http_server(self, port, host='0.0.0.0', endpoint=None, ssl=None):
         """
         Start an HTTP server for exposing the metrics, if the
         `should_start_http_server` function says we should, otherwise just return.
@@ -72,6 +72,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
         :param port: the HTTP port to expose the metrics endpoint on
         :param host: the HTTP host to listen on (default: `0.0.0.0`)
         :param endpoint: **ignored**, the HTTP server will respond on any path
+        :param ssl: **ignored**, the server will not support SSL/HTTPS
         """
 
         if self.should_start_http_server():

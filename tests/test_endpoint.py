@@ -44,6 +44,42 @@ class EndpointTest(BaseTestCase):
         self.assertIn('flask_http_request_duration_seconds_count', str(response.data))
         self.assertIn('flask_http_request_duration_seconds_sum', str(response.data))
 
+    def test_generate_metrics_content(self):
+        metrics = self.metrics(path=None)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.client.get('/test')
+
+        response = self.client.get('/metrics')
+        self.assertEqual(404, response.status_code)
+
+        response_data, _ = metrics.generate_metrics()
+
+        self.assertIn('flask_exporter_info', response_data)
+        self.assertIn('flask_http_request_total', response_data)
+        self.assertIn('flask_http_request_duration_seconds', response_data)
+
+        response_data, _ = metrics.generate_metrics(names=['flask_exporter_info'])
+
+        self.assertIn('flask_exporter_info', response_data)
+        self.assertNotIn('flask_http_request_total', response_data)
+        self.assertNotIn('flask_http_request_duration_seconds', response_data)
+
+        response_data, _ = metrics.generate_metrics(names=[
+            'flask_http_request_duration_seconds_bucket',
+            'flask_http_request_duration_seconds_count',
+            'flask_http_request_duration_seconds_sum'
+        ])
+
+        self.assertNotIn('flask_exporter_info', response_data)
+        self.assertNotIn('flask_http_request_total', response_data)
+        self.assertIn('flask_http_request_duration_seconds_bucket', response_data)
+        self.assertIn('flask_http_request_duration_seconds_count', response_data)
+        self.assertIn('flask_http_request_duration_seconds_sum', response_data)
+
     def test_http_server(self):
         metrics = self.metrics()
 
