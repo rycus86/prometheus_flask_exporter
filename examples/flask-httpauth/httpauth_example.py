@@ -9,8 +9,7 @@ metrics = PrometheusMetrics(app, metrics_decorator=auth.login_required)
 
 @auth.verify_password
 def verify_credentials(username, password):
-    return (username, password) == ('metrics', 'test') or \
-           (username, password) == ('user', 'pass')
+    return (username, password) in {('metrics', 'test'), ('user', 'pass')}
 
 
 @app.route('/test')
