@@ -718,7 +718,7 @@ class PrometheusMetrics(object):
                 except Exception as ex:
                     # if it was re-raised, treat it as an InternalServerError
                     exception = ex
-                    response = make_response('Exception: %s' % ex, 500)
+                    response = make_response(f'Exception: {ex}', 500)
 
                 if hasattr(request, 'prom_exclude_all'):
                     if metric and revert_when_not_tracked:
@@ -922,7 +922,7 @@ class PrometheusMetrics(object):
           trying to handle this processing step
         """
 
-        key = 'prom_' + tracking_key
+        key = f'prom_{tracking_key}'
         if hasattr(request, key):
             return False
         else:
