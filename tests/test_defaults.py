@@ -9,14 +9,14 @@ class DefaultsTest(BaseTestCase):
     def test_simple(self):
         metrics = self.metrics()
 
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
         self.assertMetric(
             'flask_exporter_info', '1.0',
             ('version', metrics.version)
         )
-
-        @self.app.route('/test')
-        def test():
-            return 'OK'
 
         self.client.get('/test')
         self.client.get('/test')
@@ -292,6 +292,8 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_custom_defaults_prefix(self):
+        self.assumeBeforeFlaskVersion('2.2.0')
+
         metrics = self.metrics(defaults_prefix='www')
 
         self.assertAbsent(
@@ -323,8 +325,46 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
+    def test_custom_defaults_prefix__F220(self):
+        self.assumeMinimumFlaskVersion('2.2.0')
+
+        metrics = self.metrics(defaults_prefix='www')
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        self.assertAbsent(
+            'flask_exporter_info',
+            ('version', metrics.version)
+        )
+        self.assertMetric(
+            'www_exporter_info', '1.0',
+            ('version', metrics.version)
+        )
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertAbsent(
+            'flask_http_request_total',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'www_http_request_total', '2.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'www_http_request_duration_seconds_count', '2.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
     def test_no_defaults_prefix(self):
         metrics = self.metrics(defaults_prefix=NO_PREFIX)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
 
         self.assertAbsent(
             'flask_exporter_info',
@@ -334,10 +374,6 @@ class DefaultsTest(BaseTestCase):
             'exporter_info', '1.0',
             ('version', metrics.version)
         )
-
-        @self.app.route('/test')
-        def test():
-            return 'OK'
 
         self.client.get('/test')
         self.client.get('/test')
@@ -357,6 +393,8 @@ class DefaultsTest(BaseTestCase):
         )
 
     def test_late_defaults_export(self):
+        self.assumeBeforeFlaskVersion('2.2.0')
+
         metrics = self.metrics(export_defaults=False)
 
         @self.app.route('/test')
@@ -411,7 +449,42 @@ class DefaultsTest(BaseTestCase):
             ('method', 'GET'), ('path', '/test'),
         )
 
+    def test_late_defaults_export__F220(self):
+        self.assumeMinimumFlaskVersion('2.2.0')
+
+        metrics = self.metrics(export_defaults=False)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        metrics.export_defaults(prefix='late')
+
+        self.assertMetric(
+            'late_exporter_info', '1.0',
+            ('version', metrics.version)
+        )
+
+        self.client.get('/test')
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'late_http_request_total', '3.0',
+            ('method', 'GET'), ('status', 200)
+        )
+        self.assertMetric(
+            'late_http_request_duration_seconds_count', '3.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_exceptions_total',
+            ('method', 'GET'), ('path', '/test'),
+        )
+
     def test_export_latencies_as_summary(self):
+        self.assumeBeforeFlaskVersion('2.2.0')
+
         metrics = self.metrics(export_defaults=False)
 
         @self.app.route('/test')
@@ -453,6 +526,34 @@ class DefaultsTest(BaseTestCase):
             ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 
+    def test_export_latencies_as_summary__F220(self):
+        self.assumeMinimumFlaskVersion('2.2.0')
+
+        metrics = self.metrics(export_defaults=False)
+
+        @self.app.route('/test')
+        def test():
+            return 'OK'
+
+        metrics.export_defaults(latency_as_histogram=False)
+
+        self.client.get('/test')
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric(
+            'flask_http_request_duration_seconds_sum', '[0-9.e-]+',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertMetric(
+            'flask_http_request_duration_seconds_count', '3.0',
+            ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'flask_http_request_duration_seconds_bucket',
+            ('le', '+Inf'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
     def test_non_automatic_endpoint_registration(self):
         metrics = self.metrics(path=None)
 
@@ -460,12 +561,12 @@ class DefaultsTest(BaseTestCase):
         def test():
             return 'OK'
 
+        metrics.register_endpoint('/manual/metrics')
+
         self.client.get('/test')
 
         no_metrics_response = self.client.get('/metrics')
         self.assertEqual(no_metrics_response.status_code, 404)
-
-        metrics.register_endpoint('/manual/metrics')
 
         self.client.get('/test')
 

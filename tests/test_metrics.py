@@ -12,11 +12,6 @@ class MetricsTest(BaseTestCase):
         def test1():
             return 'OK'
 
-        self.client.get('/test/1')
-
-        self.assertMetric('hist_1_count', '1.0')
-        self.assertMetric('hist_1_bucket', '1.0', ('le', '2.5'))
-
         @self.app.route('/test/2')
         @metrics.histogram('hist_2', 'Histogram 2', labels={
             'uri': lambda: request.path,
@@ -24,6 +19,19 @@ class MetricsTest(BaseTestCase):
         })
         def test2():
             return 'OK'
+
+        @self.app.route('/test/<int:x>/<int:y>')
+        @metrics.histogram('hist_3', 'Histogram 3', labels={
+            'x_value': lambda: request.view_args['x'],
+            'y_value': lambda: request.view_args['y']
+        }, buckets=(0.7, 2.9))
+        def test3(x, y):
+            return 'OK: %d/%d' % (x, y)
+
+        self.client.get('/test/1')
+
+        self.assertMetric('hist_1_count', '1.0')
+        self.assertMetric('hist_1_bucket', '1.0', ('le', '2.5'))
 
         self.client.get('/test/2')
 
@@ -35,14 +43,6 @@ class MetricsTest(BaseTestCase):
             'hist_2_bucket', '1.0',
             ('le', '1.0'), ('uri', '/test/2'), ('code', 200)
         )
-
-        @self.app.route('/test/<int:x>/<int:y>')
-        @metrics.histogram('hist_3', 'Histogram 3', labels={
-            'x_value': lambda: request.view_args['x'],
-            'y_value': lambda: request.view_args['y']
-        }, buckets=(0.7, 2.9))
-        def test3(x, y):
-            return 'OK: %d/%d' % (x, y)
 
         self.client.get('/test/3/4')
 
@@ -63,10 +63,6 @@ class MetricsTest(BaseTestCase):
         def test1():
             return 'OK'
 
-        self.client.get('/test/1')
-
-        self.assertMetric('sum_1_count', '1.0')
-
         @self.app.route('/test/2')
         @metrics.summary('sum_2', 'Summary 2', labels={
             'uri': lambda: request.path,
@@ -75,6 +71,10 @@ class MetricsTest(BaseTestCase):
         })
         def test2():
             return 'OK'
+
+        self.client.get('/test/1')
+
+        self.assertMetric('sum_1_count', '1.0')
 
         self.client.get('/test/2')
 
@@ -93,10 +93,6 @@ class MetricsTest(BaseTestCase):
 
             return 'OK'
 
-        self.client.get('/test/1')
-
-        self.assertMetric('gauge_1', '0.0')
-
         @self.app.route('/test/<int:a>')
         @metrics.gauge('gauge_2', 'Gauge 2', labels={
             'uri': lambda: request.path,
@@ -109,6 +105,10 @@ class MetricsTest(BaseTestCase):
             )
 
             return 'OK: %d' % a
+
+        self.client.get('/test/1')
+
+        self.assertMetric('gauge_1', '0.0')
 
         self.client.get('/test/2')
 
@@ -125,13 +125,6 @@ class MetricsTest(BaseTestCase):
         def test1():
             return 'OK'
 
-        self.client.get('/test/1')
-        self.assertMetric('cnt_1_total', '1.0')
-        self.client.get('/test/1')
-        self.assertMetric('cnt_1_total', '2.0')
-        self.client.get('/test/1')
-        self.assertMetric('cnt_1_total', '3.0')
-
         @self.app.route('/test/2')
         @metrics.counter('cnt_2', 'Counter 2', labels={
             'uri': lambda: request.path,
@@ -139,6 +132,13 @@ class MetricsTest(BaseTestCase):
         })
         def test2():
             return 'OK'
+
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1_total', '1.0')
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1_total', '2.0')
+        self.client.get('/test/1')
+        self.assertMetric('cnt_1_total', '3.0')
 
         self.client.get('/test/2')
 

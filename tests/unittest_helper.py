@@ -73,3 +73,21 @@ class BaseTestCase(unittest.TestCase):
         response = self.client.get(kwargs.get('endpoint', '/metrics'))
         self.assertEqual(response.status_code, 200)
         self.assertNotRegex(str(response.data), pattern)
+
+    def assumeMinimumFlaskVersion(self, version):
+        from flask import __version__ as flask_version
+
+        desired_version = list(map(int, version.split('.')))
+        actual_version = list(map(int, flask_version.split('.')))
+
+        if actual_version < desired_version:
+            self.skipTest(reason='Flask version %s is before the desired version %s' % (flask_version, version))
+
+    def assumeBeforeFlaskVersion(self, version):
+        from flask import __version__ as flask_version
+
+        desired_version = list(map(int, version.split('.')))
+        actual_version = list(map(int, flask_version.split('.')))
+
+        if actual_version >= desired_version:
+            self.skipTest(reason='Flask version %s is not before the desired version %s' % (flask_version, version))
