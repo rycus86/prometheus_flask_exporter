@@ -9,7 +9,7 @@ from timeit import default_timer
 
 from flask import Flask, Response
 from flask import request, make_response, current_app
-from flask.views import MethodViewType
+from flask.views import MethodView
 from prometheus_client import Counter, Histogram, Gauge, Summary
 from prometheus_client import multiprocess as pc_multiprocess, CollectorRegistry
 try:
@@ -723,7 +723,7 @@ class PrometheusMetrics(object):
                             # we are in a request handler method
                             response = self._response_converter(response)
 
-                        elif hasattr(view_func, 'view_class') and isinstance(view_func.view_class, MethodViewType):
+                        elif hasattr(view_func, 'view_class') and issubclass(view_func.view_class, MethodView):
                             # we are in a method view (for Flask-RESTful for example)
                             response = self._response_converter(response)
 
@@ -988,4 +988,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.20.2'
+__version__ = '0.20.3'

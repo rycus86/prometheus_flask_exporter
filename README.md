@@ -24,7 +24,7 @@ or paste it into requirements.txt:
 prometheus-flask-exporter
 
 # or with specific version number
-prometheus-flask-exporter==0.20.2
+prometheus-flask-exporter==0.20.3
 ```
 and then install dependencies from requirements.txt file as usual:
 ```
