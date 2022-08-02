@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs pytest-sample
     docker rm -f pytest-sample > /dev/null 2>&1
     exit 1
 }

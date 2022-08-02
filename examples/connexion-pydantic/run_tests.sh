@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs connexion-pydantic
     docker rm -f connexion-pydantic > /dev/null 2>&1
     exit 1
 }

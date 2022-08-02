@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs flask-httpauth
     docker rm -f flask-httpauth > /dev/null 2>&1
     exit 1
 }

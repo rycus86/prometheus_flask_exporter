@@ -1,6 +1,7 @@
 FROM python:3.8-alpine
 
-RUN apk add --no-cache curl && pip install flask flask-restx prometheus_client
+# werkzeug needs to be pinned due to https://github.com/python-restx/flask-restx/issues/460
+RUN apk add --no-cache curl && pip install flask flask-restx prometheus_client werkzeug==2.0.*
 
 ADD . /tmp/latest
 RUN pip install -e /tmp/latest --upgrade

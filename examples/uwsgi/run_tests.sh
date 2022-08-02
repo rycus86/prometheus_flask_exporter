@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs uwsgi-sample
     docker rm -f uwsgi-sample > /dev/null 2>&1
     exit 1
 }

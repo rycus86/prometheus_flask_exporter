@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs gunicorn-sample
     docker rm -f gunicorn-sample > /dev/null 2>&1
     exit 1
 }

@@ -3,7 +3,6 @@
 cd "$(dirname "$0")"
 
 _fail() {
-    echo "Logs from the application:"
     docker logs restplus-default-metrics
     docker rm -f restplus-default-metrics > /dev/null 2>&1
     exit 1
@@ -31,8 +30,6 @@ for _ in $(seq 1 10); do
         _fail
     fi
 done
-
-curl -s http://localhost:4000/metrics
 
 curl -s http://localhost:4000/metrics \
   | grep 'by_path_counter_total{path="/test"} 10.0' \

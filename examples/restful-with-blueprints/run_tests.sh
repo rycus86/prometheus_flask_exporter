@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs restful-with-blueprints
     docker rm -f restful-with-blueprints > /dev/null 2>&1
     exit 1
 }

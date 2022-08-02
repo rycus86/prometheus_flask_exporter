@@ -3,6 +3,7 @@
 cd "$(dirname "$0")"
 
 _fail() {
+    docker logs flask-multi-processes
     docker rm -f flask-multi-processes > /dev/null 2>&1
     exit 1
 }
