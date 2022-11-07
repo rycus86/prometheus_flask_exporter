@@ -629,7 +629,10 @@ class PrometheusMetrics(object):
         return self._track(
             Counter,
             lambda metric, time: metric.inc(),
-            kwargs, name, description, labels,
+            kwargs,
+            name,
+            description,
+            labels,
             registry=self.registry
         )
 
@@ -661,6 +664,10 @@ class PrometheusMetrics(object):
             name, description, labelnames=labels.keys(), registry=registry,
             **metric_kwargs
         )
+
+        # When all labels are already known at this point, the metric can get an initial value.
+        if all([label is not callable for label in labels.labels]):
+            parent_metric.labels(*[value for label, value in labels.labels])
 
         def get_metric(response):
             if labels.has_keys():
