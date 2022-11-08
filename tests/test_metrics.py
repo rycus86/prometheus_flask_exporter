@@ -28,6 +28,8 @@ class MetricsTest(BaseTestCase):
         def test3(x, y):
             return 'OK: %d/%d' % (x, y)
 
+        self.assertMetric('hist_1_count', '0.0')
+
         self.client.get('/test/1')
 
         self.assertMetric('hist_1_count', '1.0')
@@ -72,6 +74,8 @@ class MetricsTest(BaseTestCase):
         def test2():
             return 'OK'
 
+        self.assertMetric('sum_1_count', '0.0')
+
         self.client.get('/test/1')
 
         self.assertMetric('sum_1_count', '1.0')
@@ -106,6 +110,8 @@ class MetricsTest(BaseTestCase):
 
             return 'OK: %d' % a
 
+        self.assertMetric('gauge_1', '0.0')
+
         self.client.get('/test/1')
 
         self.assertMetric('gauge_1', '0.0')
@@ -133,6 +139,7 @@ class MetricsTest(BaseTestCase):
         def test2():
             return 'OK'
 
+        self.assertMetric('cnt_1_total', '0.0')
         self.client.get('/test/1')
         self.assertMetric('cnt_1_total', '1.0')
         self.client.get('/test/1')
