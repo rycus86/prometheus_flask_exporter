@@ -47,6 +47,15 @@ class MetricInitializationTest:
             # test metric value before any incoming HTTP call
             self.assertMetric(prometheus_metric_name, '0.0', *label_value_pairs)
 
+            self.client.get('/test/1')
+
+            if self.metric_type == 'gauge':
+                expected_metric_value = '0.0'
+            else:
+                expected_metric_value = '1.0'
+
+            self.assertMetric(prometheus_metric_name, expected_metric_value, *label_value_pairs)
+
         def test_initial_value_no_labels(self):
             self._test_metric_initialization()
 

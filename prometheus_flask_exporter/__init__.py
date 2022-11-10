@@ -680,9 +680,9 @@ class PrometheusMetrics(object):
         )
 
         # When all labels are already known at this point, the metric can get an initial value.
-        if initial_value_when_only_static_labels and \
-                labels.labels and all([label is not callable for label in labels.labels]):
-            parent_metric.labels(*[value for label, value in labels.labels])
+        if initial_value_when_only_static_labels and labels.labels:
+            if all([label is not callable for label in labels.labels]):
+                parent_metric.labels(*[value for label, value in labels.labels])
 
         def get_metric(response):
             if labels.has_keys():

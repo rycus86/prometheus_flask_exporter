@@ -229,8 +229,8 @@ Label values are evaluated within the request context.
 ## Initial metric values
 _For more info see: https://github.com/prometheus/client_python#labels_
 
-Metrics without any labels will get an initial value.\
-Metrics that only have static-value labels will also have an initial value. (except when they are created with the option `initial_value_when_only_static_labels=False`)\
+Metrics without any labels will get an initial value.
+Metrics that only have static-value labels will also have an initial value. (except when they are created with the option `initial_value_when_only_static_labels=False`)
 Metrics that have one or more callable-value labels will not have an initial value.
 
 ## Application information
