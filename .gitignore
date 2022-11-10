@@ -4,3 +4,4 @@
 *.pyc
 .coverage
 coverage.xml
+*.egg-info/

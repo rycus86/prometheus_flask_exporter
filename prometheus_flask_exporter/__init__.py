@@ -560,7 +560,7 @@ class PrometheusMetrics(object):
                 view_func = wrapper(view_func)
                 app.view_functions[endpoint] = view_func
 
-    def histogram(self, name, description, labels=None, **kwargs):
+    def histogram(self, name, description, labels=None, initial_value_when_only_static_labels=True, **kwargs):
         """
         Use a Histogram to track the execution time and invocation count
         of the method.
@@ -568,6 +568,8 @@ class PrometheusMetrics(object):
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param initial_value_when_only_static_labels: whether to give metric an initial value
+            when only static labels are present
         :param kwargs: additional keyword arguments for creating the Histogram
         """
 
@@ -575,10 +577,11 @@ class PrometheusMetrics(object):
             Histogram,
             lambda metric, time: metric.observe(time),
             kwargs, name, description, labels,
+            initial_value_when_only_static_labels=initial_value_when_only_static_labels,
             registry=self.registry
         )
 
-    def summary(self, name, description, labels=None, **kwargs):
+    def summary(self, name, description, labels=None, initial_value_when_only_static_labels=True, **kwargs):
         """
         Use a Summary to track the execution time and invocation count
         of the method.
@@ -586,6 +589,8 @@ class PrometheusMetrics(object):
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param initial_value_when_only_static_labels: whether to give metric an initial value
+            when only static labels are present
         :param kwargs: additional keyword arguments for creating the Summary
         """
 
@@ -593,10 +598,11 @@ class PrometheusMetrics(object):
             Summary,
             lambda metric, time: metric.observe(time),
             kwargs, name, description, labels,
+            initial_value_when_only_static_labels=initial_value_when_only_static_labels,
             registry=self.registry
         )
 
-    def gauge(self, name, description, labels=None, **kwargs):
+    def gauge(self, name, description, labels=None, initial_value_when_only_static_labels=True, **kwargs):
         """
         Use a Gauge to track the number of invocations in progress
         for the method.
@@ -604,6 +610,8 @@ class PrometheusMetrics(object):
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param initial_value_when_only_static_labels: whether to give metric an initial value
+            when only static labels are present
         :param kwargs: additional keyword arguments for creating the Gauge
         """
 
@@ -611,30 +619,37 @@ class PrometheusMetrics(object):
             Gauge,
             lambda metric, time: metric.dec(),
             kwargs, name, description, labels,
+            initial_value_when_only_static_labels=initial_value_when_only_static_labels,
             registry=self.registry,
             before=lambda metric: metric.inc(),
             revert_when_not_tracked=lambda metric: metric.dec()
         )
 
-    def counter(self, name, description, labels=None, **kwargs):
+    def counter(self, name, description, labels=None, initial_value_when_only_static_labels=True, **kwargs):
         """
         Use a Counter to track the total number of invocations of the method.
 
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param initial_value_when_only_static_labels: whether to give metric an initial value
+            when only static labels are present
         :param kwargs: additional keyword arguments for creating the Counter
         """
 
         return self._track(
             Counter,
             lambda metric, time: metric.inc(),
-            kwargs, name, description, labels,
+            kwargs,
+            name,
+            description,
+            labels,
+            initial_value_when_only_static_labels=initial_value_when_only_static_labels,
             registry=self.registry
         )
 
     def _track(self, metric_type, metric_call, metric_kwargs, name, description, labels,
-               registry, before=None, revert_when_not_tracked=None):
+               initial_value_when_only_static_labels, registry, before=None, revert_when_not_tracked=None):
         """
         Internal method decorator logic.
 
@@ -644,6 +659,8 @@ class PrometheusMetrics(object):
         :param name: the name of the metric
         :param description: the description of the metric
         :param labels: a dictionary of `{labelname: callable_or_value}` for labels
+        :param initial_value_when_only_static_labels: whether to give metric an initial value
+            when only static labels are present
         :param registry: the Prometheus Registry to use
         :param before: an optional callable to invoke before executing the
             request handler method accepting the single `metric` argument
@@ -661,6 +678,11 @@ class PrometheusMetrics(object):
             name, description, labelnames=labels.keys(), registry=registry,
             **metric_kwargs
         )
+
+        # When all labels are already known at this point, the metric can get an initial value.
+        if initial_value_when_only_static_labels and labels.labels:
+            if all([label is not callable for label in labels.labels]):
+                parent_metric.labels(*[value for label, value in labels.labels])
 
         def get_metric(response):
             if labels.has_keys():
