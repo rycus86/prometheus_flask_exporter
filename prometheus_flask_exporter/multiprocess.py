@@ -59,7 +59,7 @@ class MultiprocessPrometheusMetrics(PrometheusMetrics):
 
         kwargs.pop('path', None)  # remove the path parameter if it was passed in
 
-        super(MultiprocessPrometheusMetrics, self).__init__(
+        super().__init__(
             app=app, path=None, registry=registry, **kwargs
         )
 
@@ -107,7 +107,7 @@ class MultiprocessInternalPrometheusMetrics(MultiprocessPrometheusMetrics):
         Create a new multiprocess-aware Prometheus metrics export configuration.
         """
 
-        super(MultiprocessInternalPrometheusMetrics, self).__init__(app=app, **kwargs)
+        super().__init__(app=app, **kwargs)
 
         if app:
             self.register_endpoint(path)
@@ -220,7 +220,7 @@ class GunicornInternalPrometheusMetrics(GunicornPrometheusMetrics):
         Create a new multiprocess-aware Prometheus metrics export configuration.
         """
 
-        super(GunicornInternalPrometheusMetrics, self).__init__(app=app, **kwargs)
+        super().__init__(app=app, **kwargs)
 
         if app:
             self.register_endpoint(path)

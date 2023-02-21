@@ -57,7 +57,7 @@ documentation (see: https://prometheus.io/docs/concepts/data_model/#metric-names
 """
 
 
-class PrometheusMetrics(object):
+class PrometheusMetrics:
     """
     Prometheus metrics export configuration for Flask.
 
@@ -793,7 +793,7 @@ class PrometheusMetrics(object):
             else:
                 return lambda x: f()
 
-        class CombinedLabels(object):
+        class CombinedLabels:
             def __init__(self, _labels):
                 self.labels = _labels.items()
 
@@ -940,7 +940,7 @@ class ConnexionPrometheusMetrics(PrometheusMetrics):
         if 'response_converter' not in kwargs:
             kwargs['response_converter'] = self._create_response_converter(default_mimetype)
 
-        super(ConnexionPrometheusMetrics, self).__init__(flask_app, **kwargs)
+        super().__init__(flask_app, **kwargs)
 
     @staticmethod
     def content_type(content_type):
@@ -990,7 +990,7 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
 
         if api and 'response_converter' not in kwargs:
             kwargs['response_converter'] = self._create_response_converter(api)
-        super(RESTfulPrometheusMetrics, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
 
     @classmethod
     def for_app_factory(cls, api=None, **kwargs):
@@ -999,7 +999,7 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
     def init_app(self, app, api=None):
         if api:
             self._response_converter = self._create_response_converter(api)
-        return super(RESTfulPrometheusMetrics, self).init_app(app)
+        return super().init_app(app)
 
     @staticmethod
     def _create_response_converter(api):
