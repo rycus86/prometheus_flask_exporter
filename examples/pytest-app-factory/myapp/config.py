@@ -4,7 +4,7 @@ from .extensions import setup_extensions, metrics
 metrics.info('app_info', 'Sample app', version='0.1.2')
 
 
-class TestConfig(object):
+class TestConfig:
     DEBUG = False
     TESTING = True
 

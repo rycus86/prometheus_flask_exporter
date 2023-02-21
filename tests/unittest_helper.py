@@ -10,7 +10,7 @@ from prometheus_flask_exporter import PrometheusMetrics
 
 class BaseTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
-        super(BaseTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if sys.version_info.major < 3:
             self.assertRegex = self.assertRegexpMatches
             self.assertNotRegex = self.assertNotRegexpMatches
