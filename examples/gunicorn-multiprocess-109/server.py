@@ -33,7 +33,7 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
         return self.application
 
 
-class CustomCollector(object):
+class CustomCollector:
     def collect(self):
         info = InfoMetricFamily('xxxx', 'xxxxxx')
         info.add_metric(labels='version',
