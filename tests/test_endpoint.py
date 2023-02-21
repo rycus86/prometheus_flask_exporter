@@ -361,7 +361,7 @@ class EndpointTest(BaseTestCase):
     def test_excluded_endpoints(self):
         self.metrics(excluded_paths='/exc')
 
-        class RequestCounter(object):
+        class RequestCounter:
             value = 0
 
         @self.app.route('/included')
@@ -400,7 +400,7 @@ class EndpointTest(BaseTestCase):
             '/exc/t.*'
         ])
 
-        class RequestCounter(object):
+        class RequestCounter:
             value = 0
 
         @self.app.route('/included')

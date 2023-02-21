@@ -16,7 +16,7 @@ from unittest_helper import BaseTestCase
 
 class ExtensionsTest(BaseTestCase):
     def setUp(self):
-        super(ExtensionsTest, self).setUp()
+        super().setUp()
 
         if 'PROMETHEUS_MULTIPROC_DIR' not in os.environ:
             os.environ['PROMETHEUS_MULTIPROC_DIR'] = '/tmp'
@@ -59,7 +59,7 @@ class ExtensionsTest(BaseTestCase):
                 kwargs = {}
 
                 if extension_type is ConnexionPrometheusMetrics:
-                    class WrappedApp(object):
+                    class WrappedApp:
                         def __init__(self, app):
                             self.app = app
 
@@ -77,7 +77,7 @@ class ExtensionsTest(BaseTestCase):
 
     def test_with_registry(self):
         for extension_type in self._all_extensions:
-            class MockRegistry(object):
+            class MockRegistry:
                 def register(self, *arg, **kwargs):
                     pass
 
