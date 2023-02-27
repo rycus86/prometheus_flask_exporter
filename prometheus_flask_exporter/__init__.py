@@ -7,7 +7,7 @@ import threading
 import warnings
 from timeit import default_timer
 
-from flask import Flask, Response
+from flask import Flask, Response, abort
 from flask import request, make_response, current_app
 from flask.views import MethodView
 from prometheus_client import Counter, Histogram, Gauge, Summary
@@ -268,11 +268,12 @@ class PrometheusMetrics:
 
         @self.do_not_track()
         def metrics_disabled():
-            return (
+            app.logger.warning(
                 'Metrics are disabled when run in the Flask development server'
                 ' with reload enabled. Set the environment variable'
-                ' DEBUG_METRICS=1 to enable them anyway.\r\n'
+                ' DEBUG_METRICS=1 to enable them anyway.'
             )
+            abort(404)
 
         @self.do_not_track()
         def prometheus_metrics():
