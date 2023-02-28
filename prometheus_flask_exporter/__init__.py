@@ -7,7 +7,7 @@ import threading
 import warnings
 from timeit import default_timer
 
-from flask import Flask, Response, abort
+from flask import Flask, Response
 from flask import request, make_response, current_app
 from flask.views import MethodView
 from prometheus_client import Counter, Histogram, Gauge, Summary
@@ -266,14 +266,13 @@ class PrometheusMetrics:
         if app is None:
             app = self.app or current_app
 
-        @self.do_not_track()
-        def metrics_disabled():
-            app.logger.warning(
+        if is_running_from_reloader() and not os.environ.get('DEBUG_METRICS'):
+            app.logger.debug(
                 'Metrics are disabled when run in the Flask development server'
                 ' with reload enabled. Set the environment variable'
                 ' DEBUG_METRICS=1 to enable them anyway.'
             )
-            abort(404)
+            return
 
         @self.do_not_track()
         def prometheus_metrics():
@@ -287,17 +286,12 @@ class PrometheusMetrics:
             headers = {'Content-Type': content_type}
             return generated_data, 200, headers
 
-        if is_running_from_reloader() and not int(os.environ.get('DEBUG_METRICS', '0')):
-            metrics_view = metrics_disabled
-        else:
-            metrics_view = prometheus_metrics
-
         # apply any user supplied decorators, like authentication
         if self._metrics_decorator:
             prometheus_metrics = self._metrics_decorator(prometheus_metrics)
 
         # apply the Flask route decorator on our metrics endpoint
-        app.route(path)(metrics_view)
+        app.route(path)(prometheus_metrics)
 
     def generate_metrics(self, accept_header=None, names=None):
         """
