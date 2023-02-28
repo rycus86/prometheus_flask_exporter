@@ -263,11 +263,16 @@ class PrometheusMetrics:
             (by default it is the application registered with this class)
         """
 
-        if is_running_from_reloader() and not os.environ.get('DEBUG_METRICS'):
-            return
-
         if app is None:
             app = self.app or current_app
+
+        if is_running_from_reloader() and not os.environ.get('DEBUG_METRICS'):
+            app.logger.debug(
+                'Metrics are disabled when run in the Flask development server'
+                ' with reload enabled. Set the environment variable'
+                ' DEBUG_METRICS=1 to enable them anyway.'
+            )
+            return
 
         @self.do_not_track()
         def prometheus_metrics():
