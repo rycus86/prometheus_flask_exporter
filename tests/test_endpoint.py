@@ -358,6 +358,10 @@ class EndpointTest(BaseTestCase):
             'test_counter_total', 5.0, ('path', '/second')
         )
 
+        # issue #157
+        response = self.client.get('/metrics').text
+        self.assertNotIn('<lambda>', response)
+
     def test_excluded_endpoints(self):
         self.metrics(excluded_paths='/exc')
 
@@ -479,3 +483,7 @@ class EndpointTest(BaseTestCase):
             'by_path_counter_total',
             ('path', '/excluded')
         )
+
+        # issue #157
+        response = self.client.get('/metrics').text
+        self.assertNotIn('<lambda>', response)
