@@ -247,6 +247,7 @@ class DefaultsTest(BaseTestCase):
             def decorated(*args):
                 invocations.append('metrics')
                 return f(*args)
+
             return decorated
 
         self.metrics(metrics_decorator=decorate_metrics)
@@ -636,6 +637,42 @@ class DefaultsTest(BaseTestCase):
         )
         self.assertAbsent(
             'flask_http_request_duration_seconds_bucket',
+            ('le', '5.0'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+
+    def test_custom_buckets_honored_in_histogram(self):
+        metrics = self.metrics(buckets=(0.2, 2, 4))
+
+        @self.app.route('/test')
+        @metrics.histogram('hist_1', 'Histogram 1')
+        def test1():
+            return 'OK'
+
+        self.client.get('/test')
+        self.client.get('/test')
+
+        self.assertMetric('hist_1_bucket', '2.0', ('le', '0.2'))
+
+        self.assertMetric('hist_1_bucket', '2.0', ('le', '2.0'))
+
+        self.assertMetric('hist_1_bucket', '2.0', ('le', '4.0'))
+
+        self.assertMetric('hist_1_bucket', '2.0', ('le', '+Inf'))
+
+        self.assertAbsent(
+            'hist_1_bucket',
+            ('le', '0.1'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'hist_1',
+            ('le', '0.3'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'hist_1',
+            ('le', '1.2'), ('method', 'GET'), ('path', '/test'), ('status', 200)
+        )
+        self.assertAbsent(
+            'hist_1',
             ('le', '5.0'), ('method', 'GET'), ('path', '/test'), ('status', 200)
         )
 

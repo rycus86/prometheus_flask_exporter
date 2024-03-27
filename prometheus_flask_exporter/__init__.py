@@ -679,6 +679,10 @@ class PrometheusMetrics:
 
         labels = self._get_combined_labels(labels)
 
+        if metric_type is Histogram:
+            if metric_kwargs.get('buckets') is None and self.buckets is not None:
+                metric_kwargs['buckets'] = self.buckets
+
         parent_metric = metric_type(
             name, description, labelnames=labels.keys(), registry=registry,
             **metric_kwargs
