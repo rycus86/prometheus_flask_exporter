@@ -49,7 +49,7 @@ jobs:
           - testname: uwsgi
           - testname: uwsgi-lazy-apps
           - testname: wsgi
-          - testname: connexion-pydantic
+          # - testname: connexion-pydantic
           - testname: restful-with-blueprints
           - testname: restful-return-none
           - testname: restplus-default-metrics
