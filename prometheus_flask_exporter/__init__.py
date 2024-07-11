@@ -1024,4 +1024,4 @@ class RESTfulPrometheusMetrics(PrometheusMetrics):
         return _make_response
 
 
-__version__ = '0.23.0'
+__version__ = '0.23.1'
