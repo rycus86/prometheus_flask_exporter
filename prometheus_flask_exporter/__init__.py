@@ -715,7 +715,7 @@ class PrometheusMetrics:
                 try:
                     try:
                         # execute the handler function
-                        response = f(*args, **kwargs)
+                        response = current_app.ensure_sync(f)(*args, **kwargs)
                     except Exception as ex:
                         # let Flask decide to wrap or reraise the Exception
                         response = current_app.handle_user_exception(ex)
