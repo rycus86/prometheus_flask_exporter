@@ -264,6 +264,12 @@ metrics = PrometheusMetrics.for_app_factory()
 # then later:
 metrics.init_app(app)
 ```
+**NOTE**: When using the Flask application in debug mode, you must set the `DEBUG_METRICS` environment variable to `1` before starting the application to ensure the `/metrics` endpoint is exposed:
+
+```bash
+export DEBUG_METRICS=1
+```
+This step is crucial because, without it, the `/metrics` endpoint might not be properly registered and displayed in debug mode.
 
 ## Securing the metrics endpoint
 
